@@ -37,7 +37,6 @@ resource "openstack_networking_subnet_v2" "lab-public-subnet" {
   cidr       = var.public_net_cidr
   dns_nameservers = ["8.8.8.8", "8.8.4.4"]
   ip_version = 4
-  enable_dhcp = false
 }
 
 resource "openstack_networking_network_v2" "lab-vm_public" {
