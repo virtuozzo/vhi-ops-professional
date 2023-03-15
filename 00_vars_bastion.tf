@@ -1,7 +1,7 @@
 ## Bastion image
 variable "bastion_image" {
   type = string
-  default = "bastion"
+  default = "Ubuntu20.04-blk"
 }
 
 ## Bastion flavor

@@ -45,9 +45,10 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
       name = var.vm_public_net_name
       fixed_ip_v4 = "10.44.0.1${count.index + 1}"
     }
-
-    user_data = base64encode(templatefile("cloud-init/node.sh", {
-      # storage_ip      = join("", ["10.0.100.1", tostring(${count.index + 1})])
+    config_drive = true
+    user_data = templatefile(
+      "cloud-init/node.sh",
+    {
         storage_ip      = "10.0.100.1${count.index + 1}",
         private_ip      = "10.0.101.1${count.index + 1}",
         public_ip       = "10.0.102.1${count.index + 1}",
@@ -59,7 +60,7 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
         password_root   = var.password_root,
         password_admin  = var.password_admin,
         cluster_name    = var.cluster_name
-      } ))
+      } )
 
   depends_on = [
   openstack_networking_network_v2.lab-private,
@@ -71,7 +72,7 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
 
 ## VHI worker node instances
 resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
-  count           = var.worker_count # default = 2
+  count           = var.worker_count # default = 1
   name            = "node${count.index + 4}.lab"
   flavor_id       = data.openstack_compute_flavor_v2.vhi-worker.id
   key_pair        = openstack_compute_keypair_v2.teacher_key.name
@@ -116,8 +117,10 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
       name = var.vm_public_net_name
       fixed_ip_v4 = "10.44.0.1${count.index + 4}"
     }
-      
-    user_data = base64encode(templatefile("cloud-init/node.sh", {
+    config_drive = true
+    user_data = templatefile(
+      "cloud-init/node.sh", 
+      {
         storage_ip      = "10.0.100.1${count.index + 4}",
         private_ip      = "10.0.101.1${count.index + 4}",
         public_ip       = "10.0.102.1${count.index + 4}",
@@ -129,7 +132,7 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
         password_root   = var.password_root,
         password_admin  = var.password_admin,
         cluster_name    = var.cluster_name
-      } ))
+      } )
   
   depends_on = [
   openstack_networking_network_v2.lab-private,

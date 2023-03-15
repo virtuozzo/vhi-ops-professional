@@ -57,6 +57,7 @@ function deploy_compute_addons {
 
 # Housekeeping
 timedatectl set-timezone UTC
+rm -rf /root/.ssh/*
 
 log_msg "Changing hostname..."
 hostnamectl set-hostname "${hostname}"

@@ -2,7 +2,7 @@
 ### VHI image name
 variable "vhi_image" {
   type = string
-  default = "vz-5.2.0-141"
+  default = "[Ops Professional] VHI 5.4"
 }
 
 ### Number of MN nodes
@@ -14,7 +14,7 @@ variable "mn_count" {
 ### Number of worker nodes
 variable "worker_count" {
   type    = number
-  default = 2
+  default = 1
 }
 
 ### Number of CS disks

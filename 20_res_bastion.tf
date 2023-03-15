@@ -1,10 +1,3 @@
-data "openstack_images_image_v2" "bastion_image" {
-  name = var.bastion_image
-}
-data "openstack_compute_flavor_v2" "bastion_flavor" {
-  name = var.flavor_bastion
-}
-
 resource "openstack_compute_instance_v2" "bastion" {
   name            = "bastion.lab"
   flavor_id       = data.openstack_compute_flavor_v2.bastion_flavor.id
@@ -18,7 +11,9 @@ resource "openstack_compute_instance_v2" "bastion" {
     destination_type      = "volume"
     delete_on_termination = true
   }
-
+  config_drive = true
+  user_data = file("cloud-init/bastion.sh")
+  
   network {
     name = "${openstack_networking_network_v2.lab-public.name}"
     fixed_ip_v4 = "10.0.102.250"
