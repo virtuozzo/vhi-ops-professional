@@ -5,7 +5,7 @@ PASSWORD_HASH="$6$rounds=4096$S9I1xAEfqVLrDI1W$3yRIB/iQ.MxxOR0EU8YbaJsHF79LhihTi
 
 # Install the GNOME desktop environment
 apt-get update
-apt-get install -y ubuntu-desktop gnome-panel gnome-settings-daemon metacity nautilus gnome-terminal
+apt-get install -y ubuntu-desktop gnome-panel gnome-settings-daemon metacity nautilus gnome-terminal xrdp
 
 # Create the "student" user and add it to the sudo group
 useradd -m -s /bin/bash -G sudo student
