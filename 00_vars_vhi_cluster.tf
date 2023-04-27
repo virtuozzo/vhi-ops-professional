@@ -2,7 +2,7 @@
 ### VHI image name
 variable "vhi_image" {
   type = string
-  default = "[Ops Professional] VHI 5.4"
+  default = "[VHI Ops] VHI Template" # If required, replace image name with the one you have present in the cloud
 }
 
 ### Number of MN nodes
