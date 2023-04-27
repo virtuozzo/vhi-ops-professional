@@ -1,7 +1,7 @@
 resource "openstack_compute_instance_v2" "bastion" {
   name            = "bastion.lab"
   flavor_id       = data.openstack_compute_flavor_v2.bastion_flavor.id
-  key_pair        = openstack_compute_keypair_v2.teacher_key.name
+  key_pair        = openstack_compute_keypair_v2.ssh_key.name
 
   block_device {
     uuid                  = data.openstack_images_image_v2.bastion_image.id
