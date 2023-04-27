@@ -3,7 +3,7 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
   count           = var.mn_count # default = 3
   name            = "node${count.index + 1}.lab"
   flavor_id       = data.openstack_compute_flavor_v2.vhi-main.id
-  key_pair        = openstack_compute_keypair_v2.teacher_key.name
+  key_pair        = openstack_compute_keypair_v2.ssh_key.name
     block_device {
       uuid                  = data.openstack_images_image_v2.vhi_image.id
       source_type           = "image"
@@ -75,7 +75,7 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
   count           = var.worker_count # default = 1
   name            = "node${count.index + 4}.lab"
   flavor_id       = data.openstack_compute_flavor_v2.vhi-worker.id
-  key_pair        = openstack_compute_keypair_v2.teacher_key.name
+  key_pair        = openstack_compute_keypair_v2.ssh_key.name
     block_device {
       uuid                  = data.openstack_images_image_v2.vhi_image.id
       source_type           = "image"
