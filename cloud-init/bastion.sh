@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the hashed password for the "student" user.
-PASSWORD_HASH="$6$rounds=4096$S9I1xAEfqVLrDI1W$3yRIB/iQ.MxxOR0EU8YbaJsHF79LhihTiq3ByhcKzu9uPp/EaIvRLLggTzdECsB9XDNy43hgcuc/VtoCcYetZ1"
+PASSWORD_HASH='$6$ldNxDfgP/1A66Uol$9im0QsZoncBot9CLf2iEgnC74EsKwmJylZDlJyq/FRnWP0dk4szF7EqTbh1UCoyoCyL.wvOe11QRFuvlj4blV.'
 
 # Install the GNOME desktop environment
 apt-get update
