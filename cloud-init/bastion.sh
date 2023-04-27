@@ -27,5 +27,8 @@ apt-get upgrade -y
 # Configure GNOME desktop environment system-wide
 echo "exec gnome-session" >> /etc/X11/Xsession
 
+# Update hosts file
+echo "10.0.102.10 cloud.student.lab" >> /etc/hosts
+
 # Reboot
 reboot
