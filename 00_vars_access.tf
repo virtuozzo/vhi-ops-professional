@@ -1,5 +1,5 @@
-## Teacher SSH key
+## Access SSH key
 variable "ssh-key" {
   type    = string
-  default = "access/teacher_rsa.pub"
+  default = "access/student.lab" # Replace access/student.lab with path to your public SSH key
 }
