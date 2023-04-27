@@ -11,36 +11,111 @@
 # data from Terraform templatefile function in instance
 # code.
 
+    # # Get registration token from MN
+    # log_msg "Trying to get token from Management Node to perform registration"
+    # token=""
+    # while [ -z "$token" ]; do
+    #     log_msg "...token is empty, retrying..."
+    #     sleep 10
+    #     token=`retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} "echo ${password_admin} | vinfra node token show -f json | jq -r '.token'"`
+    # done
+    # if [ -z "$token" ]; then
+    #     log_msg "Unable to get registration token. Exiting..."
+    #     exit 1
+    # fi
+
+token=""
+
+function get_token {
+  local max_retries=5
+  local retry_delay=10
+  local count=1
+  local cmd="vinfra --vinfra-password ${password_admin} node token show -f value -c token"
+  
+  while [ -z "$token" ] && [ $count -le $max_retries ]; do
+    token=$(sshpass -p ${password_root} ssh -q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${mn_ip} "$cmd")
+
+    if [ -z "$token" ]; then
+      echo "Attempt $count/$max_retries: Token not received. Retrying in $retry_delay seconds..."
+      count=$((count + 1))
+      retry_delay=$((retry_delay * 1.5))
+      sleep $retry_delay
+    else
+      echo "Token received on attempt $count."
+    fi
+  done
+
+  if [ -z "$token" ]; then
+    echo "Failed to obtain token after $max_retries attempts. Exiting."
+    exit 1
+  fi
+}
+
+
 function log_msg {
     message=$1
     echo "[DEBUG] $(date +'%Y-%m-%d %H:%M:%S,%3N') $message" >> "/tmp/deploy.log"
 }
 
+# function retry {
+#   local retries=10
+#   local count=1
+#   until "$@"; do
+#     exit=$?Fq
+#     wait=$((2 ** $count))
+#     count=$(($count + 1))
+#     if [ $count -lt $retries ]; then
+#       log_msg "Retry $count/$retries exited $exit, retrying in $wait seconds..."
+#       sleep $wait
+#     else
+#       log_msg "Retry $count/$retries exited $exit, no more retries left."
+#       return $exit
+#     fi
+#   done
+#   return 0
+# }
+
 function retry {
-  local retries=5
+  local retries=8
   local count=1
-  until "$@"; do
+  local wait
+  local cmd="$@"
+  local error_output_file=$(mktemp)
+
+  until { "$@" > >(tee >(cat)) 2> >(tee >(cat) >&2) ;} 1>"$error_output_file" ; do
     exit=$?
-    wait=$((2 ** $count))
+    case $count in
+      1) wait=10 ;;
+      2) wait=30 ;;
+      3) wait=60 ;;
+      4) wait=120 ;;
+      5) wait=120 ;;
+      6) wait=120 ;;
+      7) wait=120 ;;
+      8) wait=600 ;;
+    esac
     count=$(($count + 1))
-    if [ $count -lt $retries ]; then
-      log_msg "Retry $count/$retries exited $exit, retrying in $wait seconds..."
+    if [ $count -le $retries ]; then
+      log_msg "Retry $count/$retries of command '$cmd' exited $exit with error: '$(cat $error_output_file)' - retrying in $wait seconds..."
       sleep $wait
     else
-      log_msg "Retry $count/$retries exited $exit, no more retries left."
-      return $exit
+      log_msg "Retry $count/$retries of command '$cmd' exited $exit with error: '$(cat $error_output_file)' - no more retries left. Exiting script."
+      echo "Error: Command '$cmd' exited with error: '$(cat $error_output_file)'. Exiting script."
+      exit $exit
     fi
   done
+
+  rm -f $error_output_file
   return 0
 }
 
 function assign_iface {
   iface=$1
   infra_network=$2
-  until vinfra --vinfra-password ${password_admin} node iface list | grep -q "$iface.*$infra_network"
+  until vinfra --vinfra-password ${password_admin} node iface list --node $(hostname) | grep -q "$iface.*$infra_network"
   do
     log_msg "Assigning $iface to $infra_network network..."
-    vinfra --vinfra-password ${password_admin} node iface set --network $infra_network $iface --wait
+    vinfra --vinfra-password ${password_admin} node iface set --network $infra_network $iface --node $(hostname) --wait
     sleep 10
   done
   log_msg "Assigning $iface to $infra_network network...done."
@@ -268,7 +343,7 @@ then ### Code running only on node1
     until vinfra --vinfra-password ${password_admin} cluster ha show | grep -q ${ha_ip_private}
     do
     log_msg "Waiting for HA cluster to assemble..."
-    sleep 10
+    sleep 30
     done
     sleep 5
     log_msg "setting up HA...done"
@@ -288,7 +363,7 @@ then ### Code running only on node1
     --timeout 3600
     log_msg "Creating compute cluster...done"
 
-### Code running on any node, but node1
+### Code running on any node but node1
 else
     # Begin registration procedure
     systemctl start vstorage-ui-agent
@@ -306,15 +381,7 @@ else
     # Get registration token from MN
     log_msg "Trying to get token from Management Node to perform registration"
     token=""
-    while [ -z "$token" ]; do
-        log_msg "...token is empty, retrying..."
-        sleep 10
-        token=`retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} "echo ${password_admin} | vinfra node token show -f json | jq -r '.token'"`
-    done
-    if [ -z "$token" ]; then
-        log_msg "Unable to get registration token. Exiting..."
-        exit 1
-    fi
+    get_token
 
     # Register in the backend
     log_msg "Registering in the cluster..."
