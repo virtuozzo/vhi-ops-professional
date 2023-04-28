@@ -1,4 +1,4 @@
-export OS_PROJECT_DOMAIN_NAME=student1          # replace "student1" with your project name
+export OS_PROJECT_DOMAIN_NAME=vhi-ops           # replace "vhi-ops" with your domain name
 export OS_USER_DOMAIN_NAME=vhi-ops              # replace "vhi-ops" with your domain name
 export OS_PROJECT_NAME=student1                 # replace "student1" with your project name again
 export OS_USERNAME=student1                     # replace "student1" with your user name
