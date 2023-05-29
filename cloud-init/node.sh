@@ -94,7 +94,6 @@ function retry {
       7) wait=120 ;;
       8) wait=600 ;;
     esac
-    count=$(($count + 1))
     if [ $count -le $retries ]; then
       log_msg "Retry $count/$retries of command '$cmd' exited $exit with error: '$(cat $error_output_file)' - retrying in $wait seconds..."
       sleep $wait
@@ -103,6 +102,7 @@ function retry {
       echo "Error: Command '$cmd' exited with error: '$(cat $error_output_file)'. Exiting script."
       exit $exit
     fi
+    count=$(($count + 1))
   done
 
   rm -f $error_output_file
@@ -119,6 +119,14 @@ function assign_iface {
     sleep 10
   done
   log_msg "Assigning $iface to $infra_network network...done."
+}
+
+function remove_ipv4_from_iface {
+  iface=$1
+  node=$2
+  log_msg "Removing temporary IP address from $iface interface of $node..."
+  retry vinfra --vinfra-password ${password_admin} node iface set --ipv4 '' $iface --node $node --wait
+  log_msg "Removing temporary IP address from $iface interface of $node... done."
 }
 
 function deploy_compute_addons {
@@ -328,6 +336,12 @@ then ### Code running only on node1
     done 
     log_msg "Waiting for other nodes to register...done"
 
+    # Remove temporay IP address from eth3 Public_VM virtual network
+    remove_ipv4_from_iface eth3 "node1.vstoragedomain"
+    remove_ipv4_from_iface eth3 "node2.vstoragedomain"
+    remove_ipv4_from_iface eth3 "node3.vstoragedomain"
+    remove_ipv4_from_iface eth3 "node4.vstoragedomain"
+
     # Assemble lists of compute and HA nodes
     compute_nodes=$(vinfra --vinfra-password ${password_admin} node list -f value -c host -c id | sort -k2 | awk '{print $1}' | tr '\n' ' ' | sed 's/.$//' | sed -e 's: :,:g')
     ha_nodes=node1,node2,node3
@@ -346,7 +360,7 @@ then ### Code running only on node1
     sleep 30
     done
     sleep 5
-    log_msg "setting up HA...done"
+    log_msg "Setting up HA...done"
 
     # Deploy compute cluster
     log_msg "Creating compute cluster..."
