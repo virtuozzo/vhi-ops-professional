@@ -1,6 +1,0 @@
-{
-    "yaml.schemas": {
-        "file:///Users/anikolaev/.vscode/extensions/atlassian.atlascode-3.0.2/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml",
-        "https://raw.githubusercontent.com/canonical/cloud-init/main/cloudinit/config/schemas/versions.schema.cloud-config.json": "file:///Users/anikolaev/work/vhi-ops-professional/cloud-init/bastion"
-    }
-}
