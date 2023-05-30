@@ -23,12 +23,6 @@ variable "cs_count" {
   default = 2
 }
 
-### Persistent CS disk size
-variable "cs_persistent_size" {
-  type    = number
-  default = 200
-}
-
 ### Main node flavor name
 variable "flavor_main" {
   type    = string

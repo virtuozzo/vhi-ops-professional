@@ -7,7 +7,7 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
     block_device {
       uuid                  = data.openstack_images_image_v2.vhi_image.id
       source_type           = "image"
-      volume_size           = 250
+      volume_size           = 150
       boot_index            = 0
       destination_type      = "volume"
       delete_on_termination = true
@@ -16,7 +16,7 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
     block_device {
     source_type           = "blank"
     destination_type      = "volume"
-    volume_size           = 200
+    volume_size           = 100
     boot_index            = 1
     delete_on_termination = true
     }
@@ -24,7 +24,7 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
   block_device {
     source_type           = "blank"
     destination_type      = "volume"
-    volume_size           = 200
+    volume_size           = 100
     boot_index            = 2
     delete_on_termination = true
     }
@@ -79,7 +79,7 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
     block_device {
       uuid                  = data.openstack_images_image_v2.vhi_image.id
       source_type           = "image"
-      volume_size           = 250
+      volume_size           = 150
       boot_index            = 0
       destination_type      = "volume"
       delete_on_termination = true
@@ -88,7 +88,7 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
     block_device {
       source_type           = "blank"
       destination_type      = "volume"
-      volume_size           = 200
+      volume_size           = 100
       boot_index            = 1
       delete_on_termination = true
     }
@@ -96,7 +96,7 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
     block_device {
       source_type           = "blank"
       destination_type      = "volume"
-      volume_size           = 200
+      volume_size           = 100
       boot_index            = 2
       delete_on_termination = true
     }
