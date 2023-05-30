@@ -44,7 +44,7 @@ variable "flavor_worker" {
 ### Node root password
 variable "password_root" {
   type = string
-  default = "Lab_root"
+  default = "Lab_r00t"
 }
 
 ### Admin panel password
