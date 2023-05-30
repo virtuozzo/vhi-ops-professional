@@ -11,19 +11,6 @@
 # data from Terraform templatefile function in instance
 # code.
 
-    # # Get registration token from MN
-    # log_msg "Trying to get token from Management Node to perform registration"
-    # token=""
-    # while [ -z "$token" ]; do
-    #     log_msg "...token is empty, retrying..."
-    #     sleep 10
-    #     token=`retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} "echo ${password_admin} | vinfra node token show -f json | jq -r '.token'"`
-    # done
-    # if [ -z "$token" ]; then
-    #     log_msg "Unable to get registration token. Exiting..."
-    #     exit 1
-    # fi
-
 token=""
 
 function get_token {
@@ -51,29 +38,10 @@ function get_token {
   fi
 }
 
-
 function log_msg {
     message=$1
     echo "[DEBUG] $(date +'%Y-%m-%d %H:%M:%S,%3N') $message" >> "/tmp/deploy.log"
 }
-
-# function retry {
-#   local retries=10
-#   local count=1
-#   until "$@"; do
-#     exit=$?Fq
-#     wait=$((2 ** $count))
-#     count=$(($count + 1))
-#     if [ $count -lt $retries ]; then
-#       log_msg "Retry $count/$retries exited $exit, retrying in $wait seconds..."
-#       sleep $wait
-#     else
-#       log_msg "Retry $count/$retries exited $exit, no more retries left."
-#       return $exit
-#     fi
-#   done
-#   return 0
-# }
 
 function retry {
   local retries=8
@@ -217,7 +185,7 @@ TYPE="Ethernet"
 EOF
 log_msg "Configured vm-public interface eth3"
 
-log_msg "Applying interface configuration..."
+log_msg "Applying interface configuration...done."
 
 systemctl stop vstorage-ui-agent
 log_msg "Stopped vstorage-ui-agent service"
@@ -292,19 +260,21 @@ then ### Code running only on node1
     # Wait until first node change status from "installing" to "unassigned"
     log_msg "Checking if local node is in installing state..."
     until vinfra node show node1 | grep -q is_installing.*False
-    do
-    log_msg "Waiting for local node to report installation complete..."
-    sleep 10
-    done
+      do
+      log_msg "Waiting for local node to report installation complete..."
+      sleep 10
+      done
     log_msg "Local node is no longer in installing state."
 
     # Configure cluster DNS
     log_msg "Configuring cluster DNS settings..."
-    vinfra --vinfra-password ${password_admin} cluster settings dns set --nameservers "8.8.8.8"
+    vinfra --vinfra-password ${password_admin} cluster settings dns set --nameservers "8.8.8.8,1.1.1.1"
 
     # Deploying storage cluster
     log_msg "Deploying storage cluster..."
     retry vinfra --vinfra-password ${password_admin} cluster create \
+    --disk sda:mds-system \
+    --disk sdb:cs:tier=0,journal-type=inner_cache \
     --node "$node_id" ${cluster_name} \
     --wait
 
@@ -416,6 +386,7 @@ else
     log_msg "Waiting for storage cluster to initialize..."
     sleep 10
     done
+    log_msg "Waiting for storage cluster to initialize..done"
 
     # Join the storage cluster
     node_id=`hostname`
