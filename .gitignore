@@ -34,4 +34,5 @@ override.tf.json
 **/.vhi-ops-professional.code-workspace
 **/.DS_Store
 **/.vscode
+.DS_Store
 vhi-ops-professional.code-workspace
