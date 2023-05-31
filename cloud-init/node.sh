@@ -391,6 +391,9 @@ else
     # Join the storage cluster
     node_id=`hostname`
     log_msg "Joining the storage cluster..."
-    retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} "vinfra --vinfra-password ${password_admin} node join $node_id --wait"
+    retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} \
+      "vinfra --vinfra-password ${password_admin} node join \
+      --disk sda:mds-system --disk sdb:cs:tier=0,journal-type=inner_cache \
+      $node_id --wait"
     log_msg "Joining the storage cluster...done"
 fi
