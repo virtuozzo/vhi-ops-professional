@@ -378,7 +378,7 @@ else
     assign_iface eth1 Private
     assign_iface eth2 Public
     assign_iface eth3 VM_Public
-    log_msg "Waiting 15 seconds for for DB to update"
+    log_msg "Waiting 15 seconds for DB to update"
 
     # Check that storage cluster is present
     until vinfra --vinfra-password ${password_admin} cluster show | grep -q "name.*${cluster_name}"
@@ -386,11 +386,14 @@ else
     log_msg "Waiting for storage cluster to initialize..."
     sleep 10
     done
-    log_msg "Waiting for storage cluster to initialize..done"
+    log_msg "Waiting for storage cluster to initialize...done"
 
     # Join the storage cluster
     node_id=`hostname`
     log_msg "Joining the storage cluster..."
-    retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} "vinfra --vinfra-password ${password_admin} node join $node_id --wait"
+    retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} \
+      "vinfra --vinfra-password ${password_admin} node join \
+      --disk sda:mds-system --disk sdb:cs:tier=0,journal-type=inner_cache \
+      $node_id --wait"
     log_msg "Joining the storage cluster...done"
 fi
