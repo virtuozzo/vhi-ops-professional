@@ -2,7 +2,7 @@
 ### VHI image name
 variable "vhi_image" {
   type = string
-  default = "VHI-5.4" # If required, replace image name with the one you have present in the cloud
+  default = "VHI-5.4.3" # If required, replace image name with the one you have present in the cloud
 }
 
 ### Number of MN nodes
