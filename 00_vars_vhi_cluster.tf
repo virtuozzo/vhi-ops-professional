@@ -2,7 +2,7 @@
 ### VHI image name
 variable "vhi_image" {
   type = string
-  default = "VHI-5.4.3" # If required, replace image name with the one you have present in the cloud
+  default = "VHI-5.4.3" # If required, replace image name with the one you have in the cloud
 }
 
 ### Number of MN nodes
@@ -26,13 +26,13 @@ variable "cs_count" {
 ### Main node flavor name
 variable "flavor_main" {
   type    = string
-  default = "va-16-32"
+  default = "va-16-32"  # If required, replace flavor name with the one you have in the cloud
 }
 
 ### Worker node flavor name
 variable "flavor_worker" {
   type    = string
-  default = "va-8-16"
+  default = "va-8-16"   # If required, replace flavor name with the one you have in the cloud
 }
 
 ### Node root password
