@@ -26,13 +26,13 @@ variable "cs_count" {
 ### Main node flavor name
 variable "flavor_main" {
   type    = string
-  default = "vhi-main"
+  default = "va-16-32"
 }
 
 ### Worker node flavor name
 variable "flavor_worker" {
   type    = string
-  default = "vhi-compute"
+  default = "va-8-16"
 }
 
 ### Node root password
