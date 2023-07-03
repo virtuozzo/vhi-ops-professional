@@ -22,6 +22,16 @@ useradd -m -s /bin/bash -G sudo student
 # Set the password for the "student" user
 usermod --password "${PASSWORD_HASH}" student
 
+# Create a URL shortcut for VHI Admin Panel
+mkdir -p /home/student/Desktop
+echo "[Desktop Entry]
+Encoding=UTF-8
+Name=VHI Admin Panel
+Type=Link
+URL=https://cloud.student.lab:8888
+Icon=text-html" > "/home/student/Desktop/VHI Admin Panel.desktop"
+chown -R student:student /home/student/Desktop
+
 # Install the Cinnamon desktop environment and XRDP
 DEBIAN_FRONTEND=noninteractive apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y cinnamon-desktop-environment cinnamon-core xrdp
