@@ -30,6 +30,12 @@ Name=VHI Admin Panel
 Type=Link
 URL=https://cloud.student.lab:8888
 Icon=text-html" > "/home/student/Desktop/VHI Admin Panel.desktop"
+echo "[Desktop Entry]
+Encoding=UTF-8
+Name=VHI Self-Service Panel
+Type=Link
+URL=https://cloud.student.lab:8800
+Icon=text-html" > "/home/student/Desktop/VHI Self-Service Panel.desktop"
 chown -R student:student /home/student/Desktop
 
 # Install the Cinnamon desktop environment and XRDP
