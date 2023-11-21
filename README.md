@@ -38,9 +38,8 @@ Here is the diagram of the infrastructure of a sandbox students will work with:
 
 <img alt="Diagram" src="readme/infra_diagram.png" title="Sandbox Infrastructure Diagram" width="500"/>
 
-> The Terraform plan is **not** going to provision `node5.lab` VM.
-> 
-> Deploying this VM is one of the exercises student will take during the course.
+**_The Terraform plan is not going to provision `node5.lab` VM.
+Deploying this VM is one of the exercises student will take during the course._**
 
 ## Structure and conventions
 
@@ -61,12 +60,12 @@ To use this automation, your environment must meet the requirements described be
 ### Nested virtualization support
 - The OpenStack or VHI cloud must support nested virtualization.
 
->**How to test if nested virtualization is enabled.**
->
->On Intel CPUs, you can test if cloud supports nested virtualization by deploying a test VM
+**How to test if nested virtualization is enabled.**
+
+On Intel CPUs, you can test if cloud supports nested virtualization by deploying a test VM
 and executing the following command:
->
->```# cat /proc/cpuinfo | grep vmx```
+
+```# cat /proc/cpuinfo | grep vmx```
 
 ### Project resource quotas
 
@@ -85,7 +84,7 @@ The project you are working with must have the following images:
 - The image must not be of latest version to enable student to complete the updates exercise.
 - The image must have `cloud-init` installed.
 
-> If you are not a Virtuozzo employee, request the appropriate image from your Onboarding Manager.
+**If you are not a Virtuozzo employee, request the appropriate image from your Onboarding Manager.**
 
 **Ubuntu 20.04 QCOW2 image.**
 - The image must have `cloud-init` installed.
@@ -251,14 +250,14 @@ Initialize Terraform in the directory and apply Terraform plan that will set up 
 $ terraform init && terraform apply
 ```
 
-> Wait at least 20 minutes before proceeding!
-> Terraform will configure all VMs at first boot, which can take some time depending on the cloud performance and internet connection speed.
+_**Wait at least 20 minutes before proceeding!
+Terraform will configure all VMs at first boot, which can take some time depending on the cloud performance and internet connection speed.**_
 
 ## Verifying results
 
 After applying Terraform plan and waiting for scripts to complete the configuration of the environment, you may proceed to verify the access.
 
-> If you are not a Virtuozzo employee, request Bastion VM credentials from your Onboarding Manager.
+_**If you are not a Virtuozzo employee, request Bastion VM credentials from your Onboarding Manager.**_
 
 ### Verify Bastion VM completed provisioning
 
@@ -289,4 +288,4 @@ You should see compute cluster deployment progress bar:
 
 <img alt="Compute Deployment Progress Bar" src="readme/compute_progress_bar.png" title="Compute Cluster deployment in progress" width="500"/>
 
-Once compute cluster is deployed the sandbox is ready for use.
+**_Once compute cluster is deployed the sandbox is ready for use._**
