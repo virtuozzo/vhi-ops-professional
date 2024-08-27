@@ -134,7 +134,7 @@ sed -i '/NODE_ID =/d' /etc/vstorage/vstorage-ui-agent.conf
 echo "NODE_ID = '`/usr/bin/openssl rand -hex 16`'" >> /etc/vstorage/vstorage-ui-agent.conf
 log_msg "Generating new vstorage-ui-agent UUID...done"
 
-Configure network interfaces
+# Configuring network interfaces
 log_msg "Applying interface configuration..."
 cat > /etc/sysconfig/network-scripts/ifcfg-eth0 <<EOF
 BOOTPROTO="static"
@@ -193,12 +193,19 @@ sleep 3
 
 for eth in eth0 eth1 eth2 eth3
 do
-log_msg "Restarting $eth interface..."
-ifdown $eth
-ifup $eth
+  log_msg "Restarting $eth interface..."
+  ifdown $eth
+  ifup $eth
 done
 sleep 10 # Let network init
 log_msg "Restarting interfaces...done."
+
+# Find the disks to be used for Storage cluster deployment
+mds_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 > 150000000000 {print $1}' | head -n 1)
+log_msg "Storage configuration. MDS disk found: $mds_disk"
+
+cs_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 < 150000000000 {print $1}' | head -n 1)
+log_msg "Storage configuration. CS disk found: $cs_disk"
 
 # If running on node1 - deploy Storage and Compute.
 # If on any other node - join Storage and Compute
@@ -273,8 +280,8 @@ then ### Code running only on node1
     # Deploying storage cluster
     log_msg "Deploying storage cluster..."
     retry vinfra --vinfra-password ${password_admin} cluster create \
-    --disk sda:mds-system \
-    --disk sdb:cs:tier=0,journal-type=inner_cache \
+    --disk $mds_disk:mds-system \
+    --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
     --node "$node_id" ${cluster_name} \
     --wait
 
@@ -393,7 +400,7 @@ else
     log_msg "Joining the storage cluster..."
     retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} \
       "vinfra --vinfra-password ${password_admin} node join \
-      --disk sda:mds-system --disk sdb:cs:tier=0,journal-type=inner_cache \
+      --disk $mds_disk:mds-system --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
       $node_id --wait"
     log_msg "Joining the storage cluster...done"
 fi
