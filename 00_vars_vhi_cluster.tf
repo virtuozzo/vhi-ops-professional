@@ -20,7 +20,7 @@ variable "vhi-flavor_worker" {
 ## VHI node storage policy
 variable "vhi-storage_policy" {
   type    = string
-  default = "standard"   # If required, replace the storage policy with the one you have in the cloud
+  default = "default"   # If required, replace the storage policy with the one you have in the cloud
 }
 
 # Do not change the variables below unless you know what you're doing

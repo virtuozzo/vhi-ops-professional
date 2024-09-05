@@ -14,5 +14,5 @@ variable "bastion-flavor" {
 ## Bastion storage policy
 variable "bastion-storage_policy" {
   type    = string
-  default = "standard"     # If required, replace the storage policy with the one you have in the cloud
+  default = "default"     # If required, replace the storage policy with the one you have in the cloud
 }
