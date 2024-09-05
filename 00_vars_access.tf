@@ -1,5 +1,6 @@
-## Access SSH key
-variable "ssh-key" {
+# This file contains variables defining access credentials
+## Bastion/Node access SSH key
+variable "ssh_key" {
   type    = string
-  default = "access/student.pub" # Replace access/student.pub with path to your public SSH key
+  default = "~/.ssh/student.pub" # Replace with the path to your public SSH key
 }

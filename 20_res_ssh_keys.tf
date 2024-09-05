@@ -1,5 +1,5 @@
-## Teacher key
+## SSH key
 resource "openstack_compute_keypair_v2" "ssh_key" {
-  name = "ssh-key"
-  public_key = file(var.ssh-key)
+  name = "ssh_key"
+  public_key = file(var.ssh_key)
 }

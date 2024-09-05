@@ -1,11 +1,12 @@
 ## VHI MN node instances
-resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
-  count           = var.mn_count # default = 3
+resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
+  count           = var.vhi-mn_count # default = 3
   name            = "node${count.index + 1}.lab"
-  flavor_id       = data.openstack_compute_flavor_v2.vhi-main.id
+  flavor_id       = data.openstack_compute_flavor_v2.vhi-flavor_main.id
   key_pair        = openstack_compute_keypair_v2.ssh_key.name
     block_device {
-      uuid                  = data.openstack_images_image_v2.vhi_image.id
+      uuid                  = data.openstack_images_image_v2.vhi-image.id
+      volume_type           = var.vhi-storage_policy
       source_type           = "image"
       volume_size           = 150
       boot_index            = 0
@@ -14,6 +15,7 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
     }
 
     block_device {
+    volume_type           = var.vhi-storage_policy
     source_type           = "blank"
     destination_type      = "volume"
     volume_size           = 100
@@ -22,6 +24,7 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
     }
 
   block_device {
+    volume_type           = var.vhi-storage_policy
     source_type           = "blank"
     destination_type      = "volume"
     volume_size           = 100
@@ -30,19 +33,19 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
     }
 
     network {
-      name = var.storage_net_name
+      name = var.storage_net-name
       fixed_ip_v4 = "10.0.100.1${count.index + 1}"
     }
     network {
-      name = var.private_net_name
+      name = var.private_net-name
       fixed_ip_v4 = "10.0.101.1${count.index + 1}"
     }
     network {
-      name = var.public_net_name
+      name = var.public_net-name
       fixed_ip_v4 = "10.0.102.1${count.index + 1}"
     }
     network {
-      name = var.vm_public_net_name
+      name = var.vm_public_net-name
       fixed_ip_v4 = "10.44.0.1${count.index + 1}"
     }
     config_drive = true
@@ -57,27 +60,28 @@ resource "openstack_compute_instance_v2" "vhi_mn_nodes" {
         mn_ip           = "10.0.101.11",
         ha_ip_public    = "10.0.102.10",
         ha_ip_private   = "10.0.101.10",
-        password_root   = var.password_root,
-        password_admin  = var.password_admin,
-        cluster_name    = var.cluster_name
+        password_root   = var.vhi-password_root,
+        password_admin  = var.vhi-password_admin,
+        cluster_name    = var.vhi-cluster_name
       } )
 
   depends_on = [
-  openstack_networking_network_v2.lab-private,
-  openstack_networking_network_v2.lab-storage,
-  openstack_networking_network_v2.lab-public,
-  openstack_networking_network_v2.lab-vm_public
+  openstack_networking_network_v2.lab-private_net,
+  openstack_networking_network_v2.lab-storage_net,
+  openstack_networking_network_v2.lab-public_net,
+  openstack_networking_network_v2.lab-vm_public_net
   ]  
 }
 
 ## VHI worker node instances
-resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
-  count           = var.worker_count # default = 1
+resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
+  count           = var.vhi-worker_count # default = 1
   name            = "node${count.index + 4}.lab"
-  flavor_id       = data.openstack_compute_flavor_v2.vhi-worker.id
+  flavor_id       = data.openstack_compute_flavor_v2.vhi-flavor_worker.id
   key_pair        = openstack_compute_keypair_v2.ssh_key.name
     block_device {
-      uuid                  = data.openstack_images_image_v2.vhi_image.id
+      uuid                  = data.openstack_images_image_v2.vhi-image.id
+      volume_type           = var.vhi-storage_policy
       source_type           = "image"
       volume_size           = 150
       boot_index            = 0
@@ -86,6 +90,7 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
     }
 
     block_device {
+      volume_type           = var.vhi-storage_policy
       source_type           = "blank"
       destination_type      = "volume"
       volume_size           = 100
@@ -94,6 +99,7 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
     }
 
     block_device {
+      volume_type           = var.vhi-storage_policy
       source_type           = "blank"
       destination_type      = "volume"
       volume_size           = 100
@@ -102,19 +108,19 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
     }
 
     network {
-      name = var.storage_net_name
+      name = var.storage_net-name
       fixed_ip_v4 = "10.0.100.1${count.index + 4}"
     }
     network {
-      name = var.private_net_name
+      name = var.private_net-name
       fixed_ip_v4 = "10.0.101.1${count.index + 4}"
     }
     network {
-      name = var.public_net_name
+      name = var.public_net-name
       fixed_ip_v4 = "10.0.102.1${count.index + 4}"
     }
     network {
-      name = var.vm_public_net_name
+      name = var.vm_public_net-name
       fixed_ip_v4 = "10.44.0.1${count.index + 4}"
     }
     config_drive = true
@@ -129,15 +135,15 @@ resource "openstack_compute_instance_v2" "vhi_worker_nodes" {
         mn_ip           = "10.0.101.11",
         ha_ip_public    = "10.0.102.10",
         ha_ip_private   = "10.0.101.10",
-        password_root   = var.password_root,
-        password_admin  = var.password_admin,
-        cluster_name    = var.cluster_name
+        password_root   = var.vhi-password_root,
+        password_admin  = var.vhi-password_admin,
+        cluster_name    = var.vhi-cluster_name
       } )
   
   depends_on = [
-  openstack_networking_network_v2.lab-private,
-  openstack_networking_network_v2.lab-storage,
-  openstack_networking_network_v2.lab-public,
-  openstack_networking_network_v2.lab-vm_public
+  openstack_networking_network_v2.lab-private_net,
+  openstack_networking_network_v2.lab-storage_net,
+  openstack_networking_network_v2.lab-public_net,
+  openstack_networking_network_v2.lab-vm_public_net
   ]
 }
