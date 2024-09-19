@@ -198,13 +198,13 @@ You need to adjust four variables in the `00_vars_vhi_cluster.tf` file:
 ##### VHI Image name
 
 You need to set the `vhi_image` variable to the name of the VHI image in your project.
-For example, if in your cloud, the VHI image is named `vzlinux-iso-hci-latest.qcow2`, the variable should look like this:
+For example, if in your cloud, the VHI image is named `VHI-latest.qcow2`, the variable should look like this:
 
 ```
 ## VHI image name
 variable "vhi-image" {
   type = string
-  default = "vzlinux-iso-hci-latest.qcow2" # If required, replace the image name with the one you have in the cloud
+  default = "VHI-latest.qcow2" # If required, replace the image name with the one you have in the cloud
 }
 
 ```

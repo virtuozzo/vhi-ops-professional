@@ -2,7 +2,7 @@
 ## VHI image name
 variable "vhi-image" {
   type = string
-  default = "vzlinux-iso-hci-latest.qcow2" # If required, replace the image name with the one you have in the cloud
+  default = "VHI-latest.qcow2" # If required, replace the image name with the one you have in the cloud
 }
 
 ## Main node flavor name
