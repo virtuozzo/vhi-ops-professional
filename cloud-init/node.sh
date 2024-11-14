@@ -204,7 +204,7 @@ log_msg "Restarting interfaces...done."
 mds_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 > 150000000000 {print $1}' | head -n 1)
 log_msg "Storage configuration. MDS disk found: $mds_disk"
 
-cs_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 < 150000000000 {print $1}' | head -n 1)
+cs_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 < 150000000000 {print $1}' | grep -v sr | head -n 1)
 log_msg "Storage configuration. CS disk found: $cs_disk"
 
 # If running on node1 - deploy Storage and Compute.
@@ -284,6 +284,8 @@ then ### Code running only on node1
     --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
     --node "$node_id" ${cluster_name} \
     --wait
+
+//TODO: vinfra node disk lis§
 
     ## Check that storage cluster is present
     until vinfra --vinfra-password ${password_admin} cluster show | grep -q "name.*${cluster_name}"
