@@ -278,14 +278,14 @@ then ### Code running only on node1
     vinfra --vinfra-password ${password_admin} cluster settings dns set --nameservers "8.8.8.8,1.1.1.1"
 
     # Deploying storage cluster
+    log_msg "Waiting 120 sec. for disks to initialize before deploying storage cluster."
+    sleep 120
     log_msg "Deploying storage cluster..."
     retry vinfra --vinfra-password ${password_admin} cluster create \
     --disk $mds_disk:mds-system \
     --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
     --node "$node_id" ${cluster_name} \
     --wait
-
-//TODO: vinfra node disk lis§
 
     ## Check that storage cluster is present
     until vinfra --vinfra-password ${password_admin} cluster show | grep -q "name.*${cluster_name}"
@@ -398,6 +398,8 @@ else
     log_msg "Waiting for storage cluster to initialize...done"
 
     # Join the storage cluster
+    log_msg "Waiting 120 sec. for disks to initialize before joining storage cluster."
+    sleep 120
     node_id=`hostname`
     log_msg "Joining the storage cluster..."
     retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} \
