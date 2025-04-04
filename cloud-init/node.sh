@@ -40,7 +40,7 @@ function get_token {
 
 function log_msg {
     message=$1
-    echo "[DEBUG] $(date +'%Y-%m-%d %H:%M:%S,%3N') $message" >> "/tmp/deploy.log"
+    echo "[DEBUG] $(date +'%Y-%m-%d %H:%M:%S,%3N') $message" >> "/var/log/deployment.log"
 }
 
 function retry {
