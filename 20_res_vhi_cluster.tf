@@ -5,7 +5,7 @@ resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
   flavor_id       = data.openstack_compute_flavor_v2.vhi-flavor_main.id
   key_pair        = openstack_compute_keypair_v2.ssh_key.name
     block_device {
-      uuid                  = data.openstack_images_image_v2.vhi-image.id
+      uuid                  = local.vhi-image_id
       volume_type           = var.vhi-storage_policy
       source_type           = "image"
       volume_size           = 150
@@ -80,7 +80,7 @@ resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
   flavor_id       = data.openstack_compute_flavor_v2.vhi-flavor_worker.id
   key_pair        = openstack_compute_keypair_v2.ssh_key.name
     block_device {
-      uuid                  = data.openstack_images_image_v2.vhi-image.id
+      uuid                  = local.vhi-image_id
       volume_type           = var.vhi-storage_policy
       source_type           = "image"
       volume_size           = 150

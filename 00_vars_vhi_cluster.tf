@@ -1,8 +1,12 @@
 # This file contains variables describing VHI cluster
-## VHI image name
+## VHI image name/id
 variable "vhi-image" {
-  type = string
-  default = "VHI-latest.qcow2" # If required, replace the image name with the one you have in the cloud
+  type    = string
+  default = "vhi-latest" # If required, replace the image name/uuid with the one you have in the cloud
+}
+variable "vhi-image_isUUID" {
+  type    = bool
+  default = false # Set to true if vhi-image is UUID
 }
 
 ## Main node flavor name
@@ -39,7 +43,7 @@ variable "vhi-worker_count" {
 ## Storage cluster name
 variable "vhi-cluster_name" {
   type = string
-  default = "lab"
+  default = "vhi-ops-pro-lab"
 }
 
 ## Node root password
