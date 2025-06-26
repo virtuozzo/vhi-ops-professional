@@ -90,6 +90,7 @@ _If you are not a Virtuozzo employee, request the appropriate image from your On
 
 **Ubuntu 20.04 QCOW2 image.**
 - The image must have `cloud-init` installed.
+- The version must be 20.04. Other versions haven't been tested and will likely fail to configure.
 
 > You can get the latest version of the image from the official Ubuntu website:
 > 
@@ -274,7 +275,7 @@ export OS_USER_DOMAIN_NAME=vhi-ops              # replace "vhi-ops" with your do
 export OS_PROJECT_NAME=student1                 # replace "student1" with your project name
 export OS_USERNAME=user.name                    # replace "user.name" with your user name
 export OS_PASSWORD=**********                   # replace "**********" with password of your user
-export OS_AUTH_URL=https://mycloud.com:5000/v3  # replace "mycloud.com" with the base URL of your cloud panel
+export OS_AUTH_URL=https://mycloud.com:5000/v3  # replace "mycloud.com" with the base URL of your cloud panel (do not replace the ":5000/v3" part)
 export OS_IDENTITY_API_VERSION=3
 export OS_AUTH_TYPE=password
 export OS_INSECURE=true
