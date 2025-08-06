@@ -83,19 +83,14 @@ The cloud project must provide the following resources:
 
 The project you are working with must have the following images:
 
-**VHI QCOW2 image.** 
-- The image must have `cloud-init` installed.
+- VHI ISO image
+  - https://repo.virtuozzo.com/vz-platform/releases/7.0/x86_64/iso/vz-platform-7.0.iso
+- VHI QCOW2 image
+  - https://downloads.virtuozzo.com/vzlinux-iso-hci-7.0.0-251.qcow2
+- Ubuntu 20.04 QCOW2 image
+  - https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img
 
-_If you are not a Virtuozzo employee, request the appropriate image from your Onboarding Manager._
-
-**Ubuntu 20.04 QCOW2 image.**
-- The image must have `cloud-init` installed.
-- The version must be 20.04. Other versions haven't been tested and will likely fail to configure.
-
-> You can get the latest version of the image from the official Ubuntu website:
-> 
-> https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img
-
+Please do not use other versions of VHI or Ubuntu images, as the deployment script will likely fail to configure them.
 
 ## Sandbox provisioning
 
