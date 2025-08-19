@@ -2,7 +2,7 @@
 ## External network
 variable "external_network-name" {
   type    = string
-  default = "public"  # If required, replace the network name with the one you have in the cloud
+  default = "Public"  # If required, replace the network name with the one you have in the cloud
 }
 
 # Do not change the variables below unless you know what you're doing

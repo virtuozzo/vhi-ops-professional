@@ -204,8 +204,12 @@ log_msg "Restarting interfaces...done."
 mds_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 > 150000000000 {print $1}' | head -n 1)
 log_msg "Storage configuration. MDS disk found: $mds_disk"
 
-cs_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 < 150000000000 {print $1}' | grep -v sr | head -n 1)
+cs_disk=$(lsblk -nbdo NAME,SIZE | grep -v sr | awk '$2 < 150000000000 {print $1}' | head -n 1)
 log_msg "Storage configuration. CS disk found: $cs_disk"
+
+# Find 2nd CS for different tier
+cs_disk_2=$(lsblk -nbdo NAME,SIZE | grep -v sr | awk '$2 < 150000000000 {print $1}' | tail -n 1)
+log_msg "Storage configuration. Second CS disk found: $cs_disk_2"
 
 # If running on node1 - deploy Storage and Compute.
 # If on any other node - join Storage and Compute
@@ -284,6 +288,7 @@ then ### Code running only on node1
     retry vinfra --vinfra-password ${password_admin} cluster create \
     --disk $mds_disk:mds-system \
     --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
+    --disk $cs_disk_2:cs:tier=1,journal-type=inner_cache \
     --node "$node_id" ${cluster_name} \
     --wait
 
@@ -319,27 +324,11 @@ then ### Code running only on node1
     remove_ipv4_from_iface eth3 "node1.vstoragedomain"
     remove_ipv4_from_iface eth3 "node2.vstoragedomain"
     remove_ipv4_from_iface eth3 "node3.vstoragedomain"
-    remove_ipv4_from_iface eth3 "node4.vstoragedomain"
 
     # Assemble lists of compute and HA nodes
     compute_nodes=$(vinfra --vinfra-password ${password_admin} node list -f value -c host -c id | sort -k2 | awk '{print $1}' | tr '\n' ' ' | sed 's/.$//' | sed -e 's: :,:g')
-    ha_nodes=node1,node2,node3
 
     log_msg "The list of nodes: $compute_nodes"
-    log_msg "The list of HA nodes: $ha_nodes"
-
-    # Deploying HA
-    log_msg "Setting up HA..."
-    retry vinfra --vinfra-password ${password_admin} cluster ha create --virtual-ip Public:${ha_ip_public} --virtual-ip Private:${ha_ip_private} --node $ha_nodes --force --timeout 3600
-
-    ## Check that HA is ready
-    until vinfra --vinfra-password ${password_admin} cluster ha show | grep -q ${ha_ip_private}
-    do
-    log_msg "Waiting for HA cluster to assemble..."
-    sleep 30
-    done
-    sleep 5
-    log_msg "Setting up HA...done"
 
     # Deploy compute cluster
     log_msg "Creating compute cluster..."
@@ -348,9 +337,6 @@ then ### Code running only on node1
     --wait \
     --public-network=VM_Public \
     --subnet cidr="10.44.0.0/24",gateway="10.44.0.1",dhcp="enable",allocation-pool="10.44.0.100-10.44.0.199",dns-server="8.8.8.8" \
-    --enable-k8saas \
-    --enable-lbaas \
-    --enable-metering \
     --node $compute_nodes \
     --force \
     --timeout 3600

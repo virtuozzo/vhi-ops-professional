@@ -2,29 +2,29 @@
 ## VHI image name/id
 variable "vhi-image" {
   type    = string
-  default = "vhi-latest" # If required, replace the image name/uuid with the one you have in the cloud
+  default = "d3695fd9-662a-4f22-8fa9-b5cc4f67e02a" #vzlinux-iso-hci-7.0.0-251-new
 }
 variable "vhi-image_isUUID" {
   type    = bool
-  default = false # Set to true if vhi-image is UUID
+  default = true # Set to true if vhi-image is UUID
 }
 
 ## Main node flavor name
 variable "vhi-flavor_main" {
   type    = string
-  default = "va-16-32"  # If required, replace the flavor name with the one you have in the cloud
+  default = "va-4-24"  # If required, replace the flavor name with the one you have in the cloud
 }
 
 ## Worker node flavor name
 variable "vhi-flavor_worker" {
   type    = string
-  default = "va-8-16"   # If required, replace the flavor name with the one you have in the cloud
+  default = "va-4-24"   # If required, replace the flavor name with the one you have in the cloud
 }
 
 ## VHI node storage policy
 variable "vhi-storage_policy" {
   type    = string
-  default = "default"   # If required, replace the storage policy with the one you have in the cloud
+  default = "standard"   # If required, replace the storage policy with the one you have in the cloud
 }
 
 # Do not change the variables below unless you know what you're doing
@@ -37,7 +37,7 @@ variable "vhi-mn_count" {
 ## Number of worker nodes
 variable "vhi-worker_count" {
   type    = number
-  default = 1
+  default = 0
 }
 
 ## Storage cluster name

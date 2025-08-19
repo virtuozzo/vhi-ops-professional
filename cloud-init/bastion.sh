@@ -57,45 +57,12 @@ echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') Reconfiguring the SSH port to 2228"
 sed -i 's/#Port 22/Port 2228/g' /etc/ssh/sshd_config
 systemctl restart ssh
 
-# Create a desktop shortcut for VHI Admin Panel
-echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') Creating desktop shortcuts"
-mkdir -p /home/student/Desktop
-echo "[Desktop Entry]
-Encoding=UTF-8
-Name=VHI Admin Panel
-Type=Link
-URL=https://cloud.student.lab:8888
-Icon=text-html" > "/home/student/Desktop/VHI Admin Panel.desktop"
-echo "[Desktop Entry]
-Encoding=UTF-8
-Name=VHI Self-Service Panel
-Type=Link
-URL=https://cloud.student.lab:8800
-Icon=text-html" > "/home/student/Desktop/VHI Self-Service Panel.desktop"
-chown -R student:student /home/student/Desktop
-
 # Update hosts file
 echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') Updating hosts file"
 echo "10.0.102.10 cloud.student.lab" >> /etc/hosts
 
-# Install the Cinnamon desktop environment and XRDP
-run_apt "apt-get update -eany -q" "system update"
-run_apt "apt-get install -y -q cinnamon-desktop-environment cinnamon-core xrdp python3-pip" "desktop environment installation"
-
-# Configure XRDP
-echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') Configuring XRDP"
-echo "cinnamon-session" > /home/student/.xsession
-sed -i 's/3389/3390/g' /etc/xrdp/xrdp.ini
-systemctl restart xrdp.service
-
-# Configure Cinnamon for RDP
-echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') Configuring Cinnamon for RDP"
-mkdir -p /home/student/.config/gtk-3.0/
-echo "[Settings]" > /home/student/.config/gtk-3.0/settings.ini
-echo "gtk-modules=\"appmenu-gtk-module,cinnamon-applet-proxy\"" >> /home/student/.config/gtk-3.0/settings.ini
-chown -R student:student /home/student
-
 # Upgrade the system
+run_apt "apt-get update -eany -q" "system update"
 run_apt "apt-get upgrade -y -q" "system upgrade"
 
 # Check if the string exists in the file
