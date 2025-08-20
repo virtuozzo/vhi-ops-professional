@@ -39,20 +39,6 @@ resource "openstack_networking_subnet_v2" "lab-public_net-subnet" {
   ip_version = 4
 }
 
-resource "openstack_networking_network_v2" "lab-vm_public_net" {
-  name = var.vm_public_net-name
-  port_security_enabled = "false"
-}
-
-resource "openstack_networking_subnet_v2" "lab-vm_public_net-subnet" {
-  name        = "lab-vm_public_net-subnet"
-  network_id  = openstack_networking_network_v2.lab-vm_public_net.id
-  cidr        = var.vm_public_net-cidr
-  ip_version  = 4
-  enable_dhcp = false
-  gateway_ip = "10.44.0.1"
-}
-
 ### Router
 resource "openstack_networking_router_v2" "lab-vrouter" {
   name                = "lab-vrouter"
@@ -66,12 +52,5 @@ resource "openstack_networking_router_interface_v2" "lab-public_net-router-iface
   subnet_id = openstack_networking_subnet_v2.lab-public_net-subnet.id
   depends_on = [
     openstack_networking_subnet_v2.lab-public_net-subnet,
-    openstack_networking_subnet_v2.lab-vm_public_net-subnet
   ]
-}
-
-resource "openstack_networking_router_interface_v2" "lab-vm_public_net-router-iface" {
-  router_id = openstack_networking_router_v2.lab-vrouter.id
-  subnet_id = openstack_networking_subnet_v2.lab-vm_public_net-subnet.id
-  
 }

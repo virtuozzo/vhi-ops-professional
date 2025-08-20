@@ -44,10 +44,6 @@ resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
       name = var.public_net-name
       fixed_ip_v4 = "10.0.102.1${count.index + 1}"
     }
-    network {
-      name = var.vm_public_net-name
-      fixed_ip_v4 = "10.44.0.1${count.index + 1}"
-    }
     config_drive = true
     user_data = templatefile(
       "cloud-init/node.sh",
@@ -55,7 +51,6 @@ resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
         storage_ip      = "10.0.100.1${count.index + 1}",
         private_ip      = "10.0.101.1${count.index + 1}",
         public_ip       = "10.0.102.1${count.index + 1}",
-        vm_public_ip    = "10.100.0.1${count.index + 1}",
         hostname        = "node${count.index + 1}.lab",
         mn_ip           = "10.0.101.11",
         ha_ip_public    = "10.0.102.10",
@@ -69,7 +64,6 @@ resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
   openstack_networking_network_v2.lab-private_net,
   openstack_networking_network_v2.lab-storage_net,
   openstack_networking_network_v2.lab-public_net,
-  openstack_networking_network_v2.lab-vm_public_net
   ]  
 }
 
@@ -119,10 +113,6 @@ resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
       name = var.public_net-name
       fixed_ip_v4 = "10.0.102.1${count.index + 4}"
     }
-    network {
-      name = var.vm_public_net-name
-      fixed_ip_v4 = "10.44.0.1${count.index + 4}"
-    }
     config_drive = true
     user_data = templatefile(
       "cloud-init/node.sh", 
@@ -130,7 +120,6 @@ resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
         storage_ip      = "10.0.100.1${count.index + 4}",
         private_ip      = "10.0.101.1${count.index + 4}",
         public_ip       = "10.0.102.1${count.index + 4}",
-        vm_public_ip    = "10.100.0.1${count.index + 4}",
         hostname        = "node${count.index + 4}.lab",
         mn_ip           = "10.0.101.11",
         ha_ip_public    = "10.0.102.10",
@@ -144,6 +133,5 @@ resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
   openstack_networking_network_v2.lab-private_net,
   openstack_networking_network_v2.lab-storage_net,
   openstack_networking_network_v2.lab-public_net,
-  openstack_networking_network_v2.lab-vm_public_net
   ]
 }

@@ -173,25 +173,13 @@ TYPE="Ethernet"
 EOF
 log_msg "Configured public interface eth2"
 
-cat > /etc/sysconfig/network-scripts/ifcfg-eth3 <<EOF
-BOOTPROTO="none"
-IPADDR="${vm_public_ip}"
-PREFIX="24"
-DEVICE="eth3"
-IPV6INIT="no"
-NAME="eth3"
-ONBOOT="yes"
-TYPE="Ethernet"
-EOF
-log_msg "Configured vm-public interface eth3"
-
 log_msg "Applying interface configuration...done."
 
 systemctl stop vstorage-ui-agent
 log_msg "Stopped vstorage-ui-agent service"
 sleep 3
 
-for eth in eth0 eth1 eth2 eth3
+for eth in eth0 eth1 eth2
 do
   log_msg "Restarting $eth interface..."
   ifdown $eth
@@ -204,8 +192,12 @@ log_msg "Restarting interfaces...done."
 mds_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 > 150000000000 {print $1}' | head -n 1)
 log_msg "Storage configuration. MDS disk found: $mds_disk"
 
-cs_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 < 150000000000 {print $1}' | grep -v sr | head -n 1)
+cs_disk=$(lsblk -nbdo NAME,SIZE | grep -v sr | awk '$2 < 150000000000 {print $1}' | head -n 1)
 log_msg "Storage configuration. CS disk found: $cs_disk"
+
+# Find 2nd CS for different tier
+cs_disk_2=$(lsblk -nbdo NAME,SIZE | grep -v sr | awk '$2 < 150000000000 {print $1}' | tail -n 1)
+log_msg "Storage configuration. Second CS disk found: $cs_disk_2"
 
 # If running on node1 - deploy Storage and Compute.
 # If on any other node - join Storage and Compute
@@ -243,23 +235,20 @@ then ### Code running only on node1
     # Create additional infrastructure networks
     log_msg "Creating additional infrastructure networks..."
     vinfra --vinfra-password ${password_admin} cluster network create Storage
-    vinfra --vinfra-password ${password_admin} cluster network create VM_Public
-    log_msg "Created Storage and VM_public network"
+    log_msg "Created Storage network"
 
     # Attach node interfaces to new networks
     log_msg "Reassigning network interfaces to correct networks"
     assign_iface eth0 Storage
     assign_iface eth1 Private
     assign_iface eth2 Public
-    assign_iface eth3 VM_Public
 
     # Configure traffic types for all networks
     log_msg "Configuring traffic types..."
     vinfra --vinfra-password ${password_admin} cluster network set-bulk \
     --network 'Private':'Backup (ABGW) private','Internal management','SNMP','SSH','VM private' \
-    --network 'Public':'Backup (ABGW) public','Compute API','iSCSI','VM backups','NFS','S3 public','Self-service panel','SSH','Admin panel' \
-    --network 'Storage':'Storage','OSTOR private' \
-    --network 'VM_Public':'VM public' \
+    --network 'Public':'Backup (ABGW) public','Compute API','iSCSI','VM backups','NFS','Self-service panel','SSH','Admin panel','VM public' \
+    --network 'Storage':'Storage' \
     --wait
     sleep 10
     log_msg "Configuring traffic types...done"
@@ -278,12 +267,12 @@ then ### Code running only on node1
     vinfra --vinfra-password ${password_admin} cluster settings dns set --nameservers "8.8.8.8,1.1.1.1"
 
     # Deploying storage cluster
-    log_msg "Waiting 120 sec. for disks to initialize before deploying storage cluster."
-    sleep 120
+    sleep 120 # for slow disk initialization
     log_msg "Deploying storage cluster..."
     retry vinfra --vinfra-password ${password_admin} cluster create \
     --disk $mds_disk:mds-system \
     --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
+    --disk $cs_disk_2:cs:tier=1,journal-type=inner_cache \
     --node "$node_id" ${cluster_name} \
     --wait
 
@@ -296,7 +285,7 @@ then ### Code running only on node1
     log_msg "Deploying storage cluster...done"
 
     # Wait until all new interfaces show up properly in MN database
-    no_ip_interfaces=$(vinfra node iface list --all | grep -v eth3 | grep \\[\\] | wc -l)
+    no_ip_interfaces=$(vinfra node iface list --all | grep \\[\\] | wc -l)
     while [ "0" != "$no_ip_interfaces" ]
     do
     log_msg "There are $no_ip_interfaces with no IP addresses, waiting..."
@@ -315,12 +304,22 @@ then ### Code running only on node1
     done 
     log_msg "Waiting for other nodes to register...done"
 
-    # Remove temporay IP address from eth3 Public_VM virtual network
-    remove_ipv4_from_iface eth3 "node1.vstoragedomain"
-    remove_ipv4_from_iface eth3 "node2.vstoragedomain"
-    remove_ipv4_from_iface eth3 "node3.vstoragedomain"
-    remove_ipv4_from_iface eth3 "node4.vstoragedomain"
+    ## Create Domain
+    vinfra --vinfra-password ${password_admin} \
+            domain create --description "autocreated for lab env" --enable "WonderSI" -f value
+     log_msg "Creating Domain so that you don't have to..."
 
+     ## Create Projects
+     vinfra --vinfra-password ${password_admin} \
+      domain project create --description "autocreated for lab env" --enable --domain "WonderSI" "MyProject" -f value
+      log_msg "Creating Project so that you don't have to..."
+
+     ## Create User
+     echo ${password_admin} | vinfra --vinfra-password ${password_admin} \
+             domain user create domainadmin --domain "WonderSI" --assign "MyProject" project_admin --domain-permissions domain_admin --enable -f value
+     log_msg "Creating Domain User so that you don't have to..."    
+
+	
     # Assemble lists of compute and HA nodes
     compute_nodes=$(vinfra --vinfra-password ${password_admin} node list -f value -c host -c id | sort -k2 | awk '{print $1}' | tr '\n' ' ' | sed 's/.$//' | sed -e 's: :,:g')
     ha_nodes=node1,node2,node3
@@ -346,8 +345,8 @@ then ### Code running only on node1
     retry vinfra --vinfra-password ${password_admin} \
     service compute create \
     --wait \
-    --public-network=VM_Public \
-    --subnet cidr="10.44.0.0/24",gateway="10.44.0.1",dhcp="enable",allocation-pool="10.44.0.100-10.44.0.199",dns-server="8.8.8.8" \
+    --public-network=Public \
+    --subnet cidr="10.0.102.0/24",gateway="10.0.102.1",dhcp="enable",allocation-pool="10.0.102.50-10.0.102.100",dns-server="8.8.8.8" \
     --enable-k8saas \
     --enable-lbaas \
     --enable-metering \
@@ -386,7 +385,6 @@ else
     assign_iface eth0 Storage
     assign_iface eth1 Private
     assign_iface eth2 Public
-    assign_iface eth3 VM_Public
     log_msg "Waiting 15 seconds for DB to update"
 
     # Check that storage cluster is present
@@ -399,12 +397,13 @@ else
 
     # Join the storage cluster
     log_msg "Waiting 120 sec. for disks to initialize before joining storage cluster."
-    sleep 120
+    sleep 120 # for slow disk initialization
     node_id=`hostname`
     log_msg "Joining the storage cluster..."
     retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} \
       "vinfra --vinfra-password ${password_admin} node join \
       --disk $mds_disk:mds-system --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
+      --disk $cs_disk_2:cs:tier=1,journal-type=inner_cache \
       $node_id --wait"
     log_msg "Joining the storage cluster...done"
 fi

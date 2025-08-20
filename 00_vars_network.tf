@@ -41,15 +41,3 @@ variable "public_net-cidr" {
   type        = string
   default     = "10.0.102.0/24"
 }
-
-## VM_Public network
-variable "vm_public_net-name" {
-  description = "vm_public network name"
-  type        = string
-  default = "lab-vm_public"
-}
-variable "vm_public_net-cidr" {
-  description = "vm_public network name"
-  type        = string
-  default = "10.44.0.0/24"
-}

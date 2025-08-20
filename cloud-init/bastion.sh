@@ -74,13 +74,21 @@ URL=https://cloud.student.lab:8800
 Icon=text-html" > "/home/student/Desktop/VHI Self-Service Panel.desktop"
 chown -R student:student /home/student/Desktop
 
+# Create a text file so that you don't have to
+echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') Creating simple text file"
+mkdir -p /home/student/Documents
+echo "simple text file" >> /home/student/Documents/text
+chown -R student:student /home/student/Documents
+
 # Update hosts file
 echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') Updating hosts file"
 echo "10.0.102.10 cloud.student.lab" >> /etc/hosts
+echo "10.0.102.10 s3.cloud.student.lab" >> /etc/hosts
+
 
 # Install the Cinnamon desktop environment and XRDP
 run_apt "apt-get update -eany -q" "system update"
-run_apt "apt-get install -y -q cinnamon-desktop-environment cinnamon-core xrdp python3-pip" "desktop environment installation"
+run_apt "apt-get install -y -q cinnamon-desktop-environment cinnamon-core xrdp" "desktop environment installation"
 
 # Configure XRDP
 echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') Configuring XRDP"
