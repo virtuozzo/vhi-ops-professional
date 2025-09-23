@@ -2,7 +2,7 @@
 ## VHI image name/id
 variable "vhi-image" {
   type    = string
-  default = "vhi-latest" # If required, replace the image name/uuid with the one you have in the cloud
+  default = "VHI-7.0.0-251.qcow2" # If required, replace the image name/uuid with the one you have in the cloud
 }
 variable "vhi-image_isUUID" {
   type    = bool
