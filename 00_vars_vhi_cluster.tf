@@ -43,7 +43,7 @@ variable "vhi-worker_count" {
 ## Storage cluster name
 variable "vhi-cluster_name" {
   type = string
-  default = "vhi-ops-pro-lab"
+  default = "vhi-ai-ops-lab"
 }
 
 ## Node root password
