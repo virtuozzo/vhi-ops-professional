@@ -348,9 +348,6 @@ then ### Code running only on node1
     --wait \
     --public-network=VM_Public \
     --subnet cidr="10.44.0.0/24",gateway="10.44.0.1",dhcp="enable",allocation-pool="10.44.0.100-10.44.0.199",dns-server="8.8.8.8" \
-    --enable-k8saas \
-    --enable-lbaas \
-    --enable-metering \
     --node $compute_nodes \
     --force \
     --timeout 3600
