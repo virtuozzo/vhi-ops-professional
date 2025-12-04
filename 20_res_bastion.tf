@@ -1,3 +1,10 @@
+## Bastion student password
+resource "random_password" "bastion_student" {
+  length           = 16
+  special          = true
+  override_special = "!@#$%"
+}
+
 ## Bastion VM
 resource "openstack_compute_instance_v2" "bastion" {
   name            = "bastion.lab"
@@ -14,7 +21,9 @@ resource "openstack_compute_instance_v2" "bastion" {
     delete_on_termination = true
   }
   config_drive = true
-  user_data = file("cloud-init/bastion.sh")
+  user_data = templatefile("cloud-init/bastion.sh", {
+    student_password = random_password.bastion_student.result
+  })
   
   network {
     name = openstack_networking_network_v2.lab-public_net.name
