@@ -22,6 +22,7 @@
       * [Adjust networking variables](#adjust-networking-variables)
     * [Step 4: Adjust and source the OpenStack credentials file](#step-4-adjust-and-source-the-openstack-credentials-file)
     * [Step 5: Provision the sandbox](#step-5-provision-the-sandbox)
+  * [Retrieving Bastion VM credentials](#retrieving-bastion-vm-credentials)
   * [Verifying results](#verifying-results)
     * [Verify Bastion VM completed provisioning](#verify-bastion-vm-completed-provisioning)
     * [Verify that the nested VHI cluster is fully configured.](#verify-that-the-nested-vhi-cluster-is-fully-configured)
@@ -299,11 +300,40 @@ terraform init && terraform apply
 _**Wait at least 20 minutes before proceeding!
 Terraform will configure all VMs at first boot, which can take some time depending on the cloud performance and internet connection speed.**_
 
+## Retrieving Bastion VM credentials
+
+The Bastion VM `student` user password is **automatically generated** by Terraform during deployment.
+After `terraform apply` completes, the connection details are displayed in the output:
+
+```
+bastion_connection_info = {
+  "password"    = "xK#9mPq!2wLnR$vT"
+  "rdp_address" = "203.0.113.45:3390"
+  "username"    = "student"
+}
+```
+
+To retrieve the credentials at any time, use one of the following commands:
+
+**Display all connection info:**
+```
+terraform output bastion_connection_info
+```
+
+**Get JSON output (useful for scripting):**
+```
+terraform output -json bastion_connection_info
+```
+
+**Extract specific values with jq:**
+```
+terraform output -json bastion_connection_info | jq -r '.password'
+terraform output -json bastion_connection_info | jq -r '.rdp_address'
+```
+
 ## Verifying results
 
 After applying the Terraform plan and waiting for scripts to complete the environment's configuration, you may proceed to verify the access.
-
-_**If you are not a Virtuozzo employee, request Bastion VM credentials from your Onboarding Manager.**_
 
 ### Verify Bastion VM completed provisioning
 
@@ -321,7 +351,7 @@ Once the configuration of Bastion is complete, you should see the graphical logi
 Students are expected to work with their sandbox using an RDP connection to Bastion VM.
 To verify that the nested VHI cluster is ready for students to begin training, do the following:
 
-1. Connect to the Bastion VM using the RDP client on port `3390`.
+1. Connect to the Bastion VM using the RDP client. Use the address and credentials from `terraform output bastion_connection_info`.
 2. Access nested VHI Admin Panel using desktop shortcut (username `admin`; password: `Lab_admin`):
 
 <img alt="Bastion VM desktop shortcut" src="readme/bastion_desktop.png" title="Connecting to VHI Admin Panel" width="500"/>
