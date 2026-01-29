@@ -247,7 +247,7 @@ variable "vhi-storage_policy" {
 
 #### Adjust networking variables
 
-You need to set the `external_network-name` variable in the `00_vars_networking.tf` file to point to the physical network with Internet access.
+You need to set the `external_network-name` variable in the `00_vars_network.tf` file to point to the physical network with Internet access.
 For example, if your physical network is called `public`, the variable should look like this:
 
 ```
