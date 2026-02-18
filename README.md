@@ -105,7 +105,7 @@ To provision a sandbox, you will need to complete five steps:
 ### Step 1: Clone the repository
 
 ``` 
-git clone https://github.com/virtuozzo/vhi-ops-professional
+git clone -b s3-ops https://github.com/virtuozzo/vhi-ops-professional
 ```
 ```
 cd vhi-ops-professional
