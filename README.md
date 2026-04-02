@@ -1,5 +1,6 @@
 <!-- TOC -->
   * [Description](#description)
+    * [Pre-configured domain and users](#pre-configured-domain-and-users)
   * [Structure and conventions](#structure-and-conventions)
   * [Pre-requisites](#pre-requisites)
     * [Nested virtualization support](#nested-virtualization-support)
@@ -30,27 +31,38 @@
 
 ## Description
 
-This repository contains code to automatically provision and configure a sandbox environment 
-for students working on the VHI Operations Professional training course. 
+This **`s3-ops` branch** is for the **VHI Operations Professional — object storage (S3) track**. It contains code to automatically provision and configure a sandbox environment for students and trainers on Virtuozzo Hybrid Infrastructure (or compatible OpenStack) cloud.
 
-This repository is intended for Virtuozzo Technical Trainers to provision a sandbox for students on top of
-Virtuozzo Hybrid Infrastructure cloud. However, it can benefit anyone with access to an OpenStack
-or Virtuozzo Hybrid Infrastructure project who wishes to complete the VHI Operations Professional course.
+This repository is intended for Virtuozzo Technical Trainers to provision a sandbox for students. It can also benefit anyone with access to a suitable cloud project who is following the S3-focused curriculum delivered from this branch.
 
-The resulting sandbox will consist of 5 VMs and pre-configured virtual network infrastructure.
-Here is the diagram of the infrastructure of a sandbox students will work with:
+The resulting sandbox consists of **one bastion VM** and **four cluster VMs** (`node1.lab`–`node4.lab`), plus pre-configured virtual network infrastructure. **No additional worker VM is part of this track** (there is no `node5.lab` deployment exercise).
+
+Here is the diagram of the infrastructure students will work with:
 
 <img alt="Diagram" src="readme/infra_diagram.png" title="Sandbox Infrastructure Diagram" width="500"/>
 
-**_The Terraform plan will not provision `node5.lab` VM.
-Deploying this VM is one of the exercises students will take during the course._**
+_If the diagram shows a fifth cluster node, treat it as illustrative only; the **s3-ops** sandbox stops at four cluster nodes plus bastion._
+
+### Pre-configured domain and users
+
+During **first-boot deployment on `node1.lab` only**, [cloud-init/node.sh](cloud-init/node.sh) creates domain and identity objects for the lab (other nodes join the cluster and do not run this block):
+
+| Item | Detail |
+|------|--------|
+| Domain | **WonderSI** — enabled domain (`domain create … --enable "WonderSI"`). |
+| Project | **MyProject** — project under domain WonderSI. |
+| Domain user | **domainadmin** — domain-wide **domain_admin** permissions and **project_admin** on MyProject. |
+| Password | The domain user password is set from the same value as Terraform variable **`vhi-password_admin`** ([00_vars_vhi_cluster.tf](00_vars_vhi_cluster.tf)), default **`Lab_admin`** unless you override it. |
+| Cluster DNS | Cluster forwarders **8.8.8.8** and **1.1.1.1** (`cluster settings dns set`), in addition to per-interface DNS where the script configures it. |
+
+**Infrastructure admin vs domain user:** The Admin Panel login referenced later in this README uses user **`admin`** with password **`Lab_admin`** by default—the same default as **`vhi-password_admin`** when variables are unchanged. Domain user **`domainadmin`** is created with that password value for WonderSI / MyProject work in the S3 labs.
 
 ## Structure and conventions
 
 The repository contains:
 - Terraform plan files, ending with `.tf` extension.
 - Shell scripts, ending with `.sh` extension.
-- Auxiliary files required for students to complete the course, including `WonderSI_Logos.zip`.
+- Auxiliary files required for students to complete the course, including `WonderSI_Logos.zip` (branding assets aligned with the **WonderSI** lab domain).
 
 Terraform plan files follow this naming scheme:
 - `00_vars_*.tf` files contain variables.
@@ -76,15 +88,15 @@ If this prints matching lines, the VM likely exposes hardware virtualization fla
 
 ### Project resource quotas
 
-The cloud project must provide the following resources:
+The cloud project must provide the following resources (aligned with default flavors and node counts in `00_vars_vhi_cluster.tf`: three main nodes, one worker, plus bastion):
 
-- vCPU: 68 cores.
-- RAM: 132 GiB.
-- Disk space: ~1760 GiB.
+- vCPU: 58 cores.
+- RAM: 116 GiB.
+- Disk space: ~1410 GiB (volumes created by Terraform for bastion and four cluster nodes).
 - **1 floating IP** for the bastion (student RDP and access).
 - **1 public IP** for the lab router (SNAT / external connectivity to the sandbox network).
 
-These figures are **project minimums that include the course lab exercise**, not only what the first `terraform apply` consumes. During the course, students deploy **`node5.lab`** as an additional worker (same size as existing workers: 8 vCPU, 16 GiB RAM, and 150 GiB plus 2×100 GiB volumes on the chosen storage policy). Your cloud may count router and bastion addresses separately in quota or UI; the stack uses one floating IP resource for the bastion and a separate public address path for the router on the external network.
+These figures match **what a single `terraform apply` provisions** on this branch; there is no extra worker VM in the S3 curriculum. Your cloud may count router and bastion addresses separately in quota or UI; the stack uses one floating IP resource for the bastion and a separate public address path for the router on the external network.
 
 ### Images
 
