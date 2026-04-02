@@ -17,6 +17,9 @@ crash.log
 #
 # example.tfvars
 
+# Local Terraform CLI var files (e.g. lab_track = "s3") — optional; keep if non-secret
+*.auto.tfvars
+
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
 override.tf

@@ -6,9 +6,9 @@ resource "random_password" "bastion_student" {
 
 ## Bastion VM
 resource "openstack_compute_instance_v2" "bastion" {
-  name            = "bastion.lab"
-  flavor_id       = data.openstack_compute_flavor_v2.bastion-flavor.id
-  key_pair        = openstack_compute_keypair_v2.ssh_key.name
+  name      = "bastion.lab"
+  flavor_id = data.openstack_compute_flavor_v2.bastion-flavor.id
+  key_pair  = openstack_compute_keypair_v2.ssh_key.name
 
   block_device {
     uuid                  = data.openstack_images_image_v2.bastion-image.id
@@ -20,12 +20,12 @@ resource "openstack_compute_instance_v2" "bastion" {
     delete_on_termination = true
   }
   config_drive = true
-  user_data = templatefile("cloud-init/bastion.sh", {
+  user_data = templatefile(local.bastion_cloud_init, {
     student_password = random_password.bastion_student.result
   })
-  
+
   network {
-    name = openstack_networking_network_v2.lab-public_net.name
+    name        = openstack_networking_network_v2.lab-public_net.name
     fixed_ip_v4 = "10.0.102.250"
   }
 }

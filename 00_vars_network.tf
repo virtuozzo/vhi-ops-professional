@@ -2,7 +2,7 @@
 ## External network
 variable "external_network-name" {
   type    = string
-  default = "public"  # If required, replace the network name with the one you have in the cloud
+  default = "public" # If required, replace the network name with the one you have in the cloud
 }
 
 # Do not change the variables below unless you know what you're doing
@@ -22,7 +22,7 @@ variable "storage_net-cidr" {
 variable "private_net-name" {
   description = "private network name"
   type        = string
-  default = "lab-private"
+  default     = "lab-private"
 }
 variable "private_net-cidr" {
   description = "private network name"
@@ -42,14 +42,14 @@ variable "public_net-cidr" {
   default     = "10.0.102.0/24"
 }
 
-## VM_Public network
+## VM_Public network (operations track only; ignored when lab_track = s3)
 variable "vm_public_net-name" {
-  description = "vm_public network name"
+  description = "vm_public network name (lab_track = operations only)"
   type        = string
-  default = "lab-vm_public"
+  default     = "lab-vm_public"
 }
 variable "vm_public_net-cidr" {
-  description = "vm_public network name"
+  description = "vm_public network CIDR (lab_track = operations only)"
   type        = string
-  default = "10.44.0.0/24"
+  default     = "10.44.0.0/24"
 }

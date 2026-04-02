@@ -1,9 +1,9 @@
 ## VHI instances data
 # Image lookup only when using name
 data "openstack_images_image_v2" "vhi-image" {
-  count        = var.vhi-image_isUUID ? 0 : 1
-  name         = var.vhi-image
-  most_recent  = true
+  count       = var.vhi-image_isUUID ? 0 : 1
+  name        = var.vhi-image
+  most_recent = true
 }
 # Get the actual image ID based on the mode
 locals {

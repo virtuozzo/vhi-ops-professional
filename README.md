@@ -1,5 +1,6 @@
 <!-- TOC -->
   * [Description](#description)
+    * [Pre-configured domain and users (S3 track)](#pre-configured-domain-and-users-s3-track)
   * [Structure and conventions](#structure-and-conventions)
   * [Pre-requisites](#pre-requisites)
     * [Nested virtualization support](#nested-virtualization-support)
@@ -30,27 +31,45 @@
 
 ## Description
 
-This repository contains code to automatically provision and configure a sandbox environment for students working on the Virtuozzo Infrastructure Operations Professional training course. 
+This repository provisions a nested Virtuozzo Infrastructure (VHI) sandbox for the **Virtuozzo Infrastructure Operations Professional** courses. **One codebase** supports two curricula via Terraform variable **`lab_track`** in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
 
-This repository is intended for Virtuozzo Technical Trainers to provision a sandbox for students on top of Virtuozzo Infrastructure cloud. However, it can benefit anyone with access to an OpenStack or Virtuozzo Infrastructure project who wishes to complete the Virtuozzo Infrastructure Operations Professional course.
+| `lab_track` | Curriculum |
+|-------------|------------|
+| **`operations`** (default) | Standard operations track: **VM_Public** lab network and a **fourth NIC** on cluster nodes; cloud-init [`cloud-init/node.operations.sh`](cloud-init/node.operations.sh) and [`cloud-init/bastion.operations.sh`](cloud-init/bastion.operations.sh). **`node5.lab` is not created by Terraform**—deploying it is a student exercise. |
+| **`s3`** | Object storage (S3) track: **three NICs**, no VM_Public network; [`cloud-init/node.s3.sh`](cloud-init/node.s3.sh) and [`cloud-init/bastion.s3.sh`](cloud-init/bastion.s3.sh). **No `node5.lab` exercise.** If `vhi-cluster_name` is left empty ([`00_vars_vhi_cluster.tf`](00_vars_vhi_cluster.tf)), the storage cluster defaults to **`vhi-s3-ops-lab`**. |
 
-The resulting sandbox will consist of 5 VMs and pre-configured virtual network infrastructure.
-Here is the diagram of the infrastructure of a sandbox students will work with:
+**Do not change `lab_track` on an existing workspace** without destroying and recreating the environment: network layout and instance `user_data` differ by track.
+
+The sandbox is **five VMs** (bastion plus `node1.lab`–`node4.lab`) and virtual networks. Here is the reference diagram:
 
 <img alt="Diagram" src="readme/infra_diagram.png" title="Sandbox Infrastructure Diagram" width="500"/>
 
-**_The Terraform plan will not provision `node5.lab` VM.
-Deploying this VM is one of the exercises students will take during the course._**
+_If the diagram shows an extra cluster node, it is only relevant to the **operations** track’s optional `node5.lab` exercise; the **s3** track stops at four cluster nodes._
+
+### Pre-configured domain and users (S3 track)
+
+When **`lab_track = "s3"`**, during first-boot on **`node1.lab` only**, [`cloud-init/node.s3.sh`](cloud-init/node.s3.sh) creates:
+
+| Item | Detail |
+|------|--------|
+| Domain | **WonderSI** |
+| Project | **MyProject** (under WonderSI) |
+| User | **domainadmin** (domain_admin + project_admin on MyProject) |
+| Password | Same value as Terraform **`vhi-password_admin`** (default **`Lab_admin`** unless you override it). |
+| Cluster DNS | Forwarders **8.8.8.8** and **1.1.1.1** via `vinfra cluster settings dns set`. |
+
+**Admin Panel** login (see [Verifying results](#verifying-results)) uses **`admin`** / **`Lab_admin`** by default—the same default as **`vhi-password_admin`** when variables are unchanged. **`domainadmin`** is for WonderSI / MyProject work in S3 labs.
 
 ## Structure and conventions
 
 The repository contains:
 - Terraform plan files, ending with `.tf` extension.
-- Shell scripts, ending with `.sh` extension.
-- Auxiliary files required for students to complete the course, including `WonderSI_Logos.zip`.
+- Track-specific cloud-init scripts under [`cloud-init/`](cloud-init/) (`node.operations.sh` / `node.s3.sh`, `bastion.operations.sh` / `bastion.s3.sh`), selected automatically from **`lab_track`** (you do not edit these unless you are changing the lab behavior).
+- `openstack-creds.sh` for sourcing cloud credentials.
+- Auxiliary files for students, including `WonderSI_Logos.zip` (branding aligned with the **WonderSI** domain on the S3 track).
 
 Terraform plan files follow this naming scheme:
-- `00_vars_*.tf` files contain variables.
+- `00_vars_*.tf` files contain variables (including **`lab_track`** in [`00_vars_lab_track.tf`](00_vars_lab_track.tf)).
 - `10_data_*.tf` files contain runtime data collection modules.
 - `20_res_*.tf` files contain resource definitions.
 
@@ -73,15 +92,25 @@ If this prints matching lines, the VM likely exposes hardware virtualization fla
 
 ### Project resource quotas
 
-The cloud project must provide the following resources:
+Requirements depend on **`lab_track`**. In both cases you need **1 floating IP** for the bastion and **1 public IP** for the lab router (SNAT / external connectivity). Your cloud may show router and bastion separately in quota or UI.
+
+#### Operations track (`lab_track = "operations"`, default)
+
+Recommended minimums **including** the extra worker students add as **`node5.lab`** (8 vCPU, 16 GiB RAM, 150 + 2×100 GiB volumes):
 
 - vCPU: 68 cores.
 - RAM: 132 GiB.
 - Disk space: ~1760 GiB.
-- **1 floating IP** for the bastion (student RDP and access).
-- **1 public IP** for the lab router (SNAT / external connectivity to the sandbox network).
 
-These figures are **project minimums that include the course lab exercise**, not only what the first `terraform apply` consumes. During the course, students deploy **`node5.lab`** as an additional worker (same size as existing workers: 8 vCPU, 16 GiB RAM, and 150 GiB plus 2×100 GiB volumes on the chosen storage policy). Your cloud may count router and bastion addresses separately in quota or UI; the stack uses one floating IP resource for the bastion and a separate public address path for the router on the external network.
+These are **not** only what the first `terraform apply` consumes; they reserve headroom for the lab exercise.
+
+#### S3 track (`lab_track = "s3"`)
+
+Aligned with default flavors and node counts after a single **`terraform apply`** (no fifth node):
+
+- vCPU: 58 cores.
+- RAM: 116 GiB.
+- Disk space: ~1410 GiB.
 
 ### Images
 
@@ -123,11 +152,13 @@ Use **Terraform 0.14.0 or newer** (see `required_version` in the root module). T
 
 ### Step 3: Adjust Terraform Variables
 
-You will need to adjust four variable files: 
-- `00_vars_access.tf` to set the SSH key path for the sandbox.
-- `00_vars_bastion.tf` to set variables related to Bastion VM.
-- `00_vars_network.tf` to set variables related to networking.
-- `00_vars_vhi_cluster.tf` to set variables related to Virtuozzo Infrastructure nodes.
+You will need to review and usually adjust these variable files:
+
+- [`00_vars_lab_track.tf`](00_vars_lab_track.tf) — set **`lab_track`** to **`operations`** (default) or **`s3`**. You can instead pass **`-var='lab_track=s3'`** at apply time or use a `*.auto.tfvars` file (see Step 5).
+- `00_vars_access.tf` — SSH public key path for the sandbox.
+- `00_vars_bastion.tf` — Bastion VM image, flavor, storage policy.
+- `00_vars_network.tf` — networking (VM_Public variables apply only when **`lab_track = "operations"`**).
+- `00_vars_vhi_cluster.tf` — cluster images, flavors, storage policy, passwords. Leave **`vhi-cluster_name`** empty to use the track default (`vhi-ops-pro-lab` or `vhi-s3-ops-lab`); set it explicitly to override.
 
 #### Adjust SSH key path
 
@@ -262,7 +293,7 @@ variable "vhi-storage_policy" {
 
 #### Adjust networking variables
 
-You need to set the `external_network-name` variable in the `00_vars_networking.tf` file to point to the physical network with Internet access.
+You need to set the `external_network-name` variable in the `00_vars_network.tf` file to point to the physical network with Internet access.
 For example, if your physical network is called `public`, the variable should look like this:
 
 ```
@@ -306,11 +337,21 @@ source openstack-creds.sh
 
 ### Step 5: Provision the sandbox
 
-Initialize Terraform in the directory and apply Terraform plan that will set up the sandbox:
+Initialize Terraform in the directory and apply the plan:
 
 ```
 terraform init && terraform apply
 ```
+
+**S3 track** (if you did not set `lab_track` in a `.tf` file):
+
+```
+terraform init && terraform apply -var='lab_track=s3'
+```
+
+You can also create a file such as `s3.auto.tfvars` containing `lab_track = "s3"` (keep it out of version control if it mixes with secrets; see `.gitignore`).
+
+**Changing `lab_track` after the fact** on the same state is not supported—destroy the stack (or use a fresh project/state) before switching tracks.
 
 _**Wait at least 20 minutes before proceeding!
 Terraform will configure all VMs at first boot, which can take some time depending on the cloud performance and internet connection speed.**_
