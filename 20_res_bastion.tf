@@ -1,8 +1,7 @@
 ## Bastion student password
 resource "random_password" "bastion_student" {
-  length           = 16
-  special          = true
-  override_special = "!@#$%"
+  length           = 12
+  special          = false
 }
 
 ## Bastion VM

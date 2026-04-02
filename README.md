@@ -1,6 +1,5 @@
 <!-- TOC -->
   * [Description](#description)
-    * [Pre-configured domain and users](#pre-configured-domain-and-users)
   * [Structure and conventions](#structure-and-conventions)
   * [Pre-requisites](#pre-requisites)
     * [Nested virtualization support](#nested-virtualization-support)
@@ -15,54 +14,37 @@
         * [Bastion image name](#bastion-image-name)
         * [Bastion flavor](#bastion-flavor)
         * [Bastion storage policy](#bastion-storage-policy)
-      * [Adjust VHI node variables](#adjust-vhi-node-variables)
-        * [VHI Image name](#vhi-image-name)
+      * [Adjust Virtuozzo Infrastructure node variables](#adjust-virtuozzo-infrastructure-node-variables)
+        * [Virtuozzo Infrastructure Image name](#virtuozzo-infrastructure-image-name)
         * [Main node flavor](#main-node-flavor)
         * [Worker node flavor](#worker-node-flavor)
-        * [VHI node storage policy](#vhi-node-storage-policy)
+        * [Virtuozzo Infrastructure node storage policy](#virtuozzo-infrastructure-node-storage-policy)
       * [Adjust networking variables](#adjust-networking-variables)
     * [Step 4: Adjust and source the OpenStack credentials file](#step-4-adjust-and-source-the-openstack-credentials-file)
     * [Step 5: Provision the sandbox](#step-5-provision-the-sandbox)
   * [Retrieving Bastion VM credentials](#retrieving-bastion-vm-credentials)
   * [Verifying results](#verifying-results)
     * [Verify Bastion VM completed provisioning](#verify-bastion-vm-completed-provisioning)
-    * [Verify that the nested VHI cluster is fully configured.](#verify-that-the-nested-vhi-cluster-is-fully-configured)
+    * [Verify that the nested Virtuozzo Infrastructure cluster is fully configured.](#verify-that-the-nested-virtuozzo-infrastructure-cluster-is-fully-configured)
 <!-- TOC -->
 
 ## Description
 
-This **`s3-ops` branch** is for the **VHI Operations Professional — object storage (S3) track**. It contains code to automatically provision and configure a sandbox environment for students and trainers on Virtuozzo Hybrid Infrastructure (or compatible OpenStack) cloud.
+This **`s3-ops` branch** contains code to automatically provision and configure a sandbox environment for students working on the **Virtuozzo Infrastructure S3 Operations** training course.
 
-This repository is intended for Virtuozzo Technical Trainers to provision a sandbox for students. It can also benefit anyone with access to a suitable cloud project who is following the S3-focused curriculum delivered from this branch.
+This repository is intended for Virtuozzo Technical Trainers to provision a sandbox for students on top of Virtuozzo Infrastructure cloud. However, it can benefit anyone with access to an OpenStack or Virtuozzo Infrastructure project who wishes to complete the Virtuozzo Infrastructure S3 Operations course.
 
-The resulting sandbox consists of **one bastion VM** and **four cluster VMs** (`node1.lab`–`node4.lab`), plus pre-configured virtual network infrastructure. **No additional worker VM is part of this track** (there is no `node5.lab` deployment exercise).
-
+The resulting sandbox consists of **one bastion VM** and **four cluster VMs** (`node1.lab`–`node4.lab`), plus pre-configured virtual network infrastructure.
 Here is the diagram of the infrastructure students will work with:
 
 <img alt="Diagram" src="readme/infra_diagram.png" title="Sandbox Infrastructure Diagram" width="500"/>
-
-_If the diagram shows a fifth cluster node, treat it as illustrative only; the **s3-ops** sandbox stops at four cluster nodes plus bastion._
-
-### Pre-configured domain and users
-
-During **first-boot deployment on `node1.lab` only**, [cloud-init/node.sh](cloud-init/node.sh) creates domain and identity objects for the lab (other nodes join the cluster and do not run this block):
-
-| Item | Detail |
-|------|--------|
-| Domain | **WonderSI** — enabled domain (`domain create … --enable "WonderSI"`). |
-| Project | **MyProject** — project under domain WonderSI. |
-| Domain user | **domainadmin** — domain-wide **domain_admin** permissions and **project_admin** on MyProject. |
-| Password | The domain user password is set from the same value as Terraform variable **`vhi-password_admin`** ([00_vars_vhi_cluster.tf](00_vars_vhi_cluster.tf)), default **`Lab_admin`** unless you override it. |
-| Cluster DNS | Cluster forwarders **8.8.8.8** and **1.1.1.1** (`cluster settings dns set`), in addition to per-interface DNS where the script configures it. |
-
-**Infrastructure admin vs domain user:** The Admin Panel login referenced later in this README uses user **`admin`** with password **`Lab_admin`** by default—the same default as **`vhi-password_admin`** when variables are unchanged. Domain user **`domainadmin`** is created with that password value for WonderSI / MyProject work in the S3 labs.
 
 ## Structure and conventions
 
 The repository contains:
 - Terraform plan files, ending with `.tf` extension.
 - Shell scripts, ending with `.sh` extension.
-- Auxiliary files required for students to complete the course, including `WonderSI_Logos.zip` (branding assets aligned with the **WonderSI** lab domain).
+- Auxiliary files required for students to complete the course.
 
 Terraform plan files follow this naming scheme:
 - `00_vars_*.tf` files contain variables.
@@ -74,7 +56,7 @@ Terraform plan files follow this naming scheme:
 To use this automation, your environment must meet the requirements described below.
 
 ### Nested virtualization support
-- The OpenStack or VHI cloud must support nested virtualization.
+- The OpenStack or Virtuozzo Infrastructure cloud must support nested virtualization.
 
 **How to test if nested virtualization is enabled.**
 
@@ -88,11 +70,11 @@ If this prints matching lines, the VM likely exposes hardware virtualization fla
 
 ### Project resource quotas
 
-The cloud project must provide the following resources (aligned with default flavors and node counts in `00_vars_vhi_cluster.tf`: three main nodes, one worker, plus bastion):
+The cloud project must provide the following resources:
 
 - vCPU: 58 cores.
 - RAM: 116 GiB.
-- Disk space: ~1410 GiB (volumes created by Terraform for bastion and four cluster nodes).
+- Disk space: ~1410 GiB
 - **1 floating IP** for the bastion (student RDP and access).
 - **1 public IP** for the lab router (SNAT / external connectivity to the sandbox network).
 
@@ -102,14 +84,14 @@ These figures match **what a single `terraform apply` provisions** on this branc
 
 The project you are working with must have the following images:
 
-- VHI ISO image
+- Virtuozzo Infrastructure ISO image
   - https://repo.virtuozzo.com/vz-platform/releases/7.0/x86_64/iso/vz-platform-7.0.iso
-- VHI QCOW2 image
+- Virtuozzo Infrastructure QCOW2 image
   - https://downloads.virtuozzo.com/vzlinux-iso-hci-7.0.0-251.qcow2
 - Ubuntu 20.04 QCOW2 image
   - https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img
 
-Please do not use other versions of VHI or Ubuntu images, as the deployment script will likely fail to configure them.
+Please do not use other versions of Virtuozzo Infrastructure or Ubuntu images, as the deployment script will likely fail to configure them.
 
 ## Sandbox provisioning
 
@@ -142,7 +124,7 @@ You will need to adjust four variable files:
 - `00_vars_access.tf` to set the SSH key path for the sandbox.
 - `00_vars_bastion.tf` to set variables related to Bastion VM.
 - `00_vars_network.tf` to set variables related to networking.
-- `00_vars_vhi_cluster.tf` to set variables related to VHI nodes.
+- `00_vars_vhi_cluster.tf` to set variables related to Virtuozzo Infrastructure nodes.
 
 #### Adjust SSH key path
 
@@ -204,18 +186,18 @@ variable "bastion-storage_policy" {
 }
 ```
 
-#### Adjust VHI node variables
+#### Adjust Virtuozzo Infrastructure node variables
 
 You need to adjust four variables in the `00_vars_vhi_cluster.tf` file:
-1. VHI image name.
+1. Virtuozzo Infrastructure image name.
 2. Main node flavor.
 3. Worker node flavor.
-4. VHI node storage policy
+4. Virtuozzo Infrastructure node storage policy
 
-##### VHI Image name
+##### Virtuozzo Infrastructure Image name
 
-You need to set the `vhi-image` variable to the name (or UUID—see below) of the VHI image in your project.
-For example, if in your cloud, the VHI image is named `VHI-latest.qcow2`, the variable should look like this:
+You need to set the `vhi-image` variable to the name (or UUID—see below) of the Virtuozzo Infrastructure image in your project.
+For example, if in your cloud, the Virtuozzo Infrastructure image is named `Virtuozzo Infrastructure-latest.qcow2`, the variable should look like this:
 
 ```
 ## VHI image name
@@ -262,7 +244,7 @@ variable "vhi-flavor_worker" {
 }
 ```
 
-##### VHI node storage policy
+##### Virtuozzo Infrastructure node storage policy
 
 You need to set the `vhi-storage_policy` variable to the storage policy with at least 1750GB of storage in the project's quota.
 For example, if in your cloud such policy is named `default`, the variable should look like this:
@@ -337,7 +319,7 @@ After `terraform apply` completes, the connection details are displayed in the o
 
 ```
 bastion_connection_info = {
-  "password"    = "xK#9mPq!2wLnR$vT"
+  "password"    = "xK9mPq2wLnRv"
   "rdp_address" = "203.0.113.45:3390"
   "username"    = "student"
 }
@@ -376,15 +358,15 @@ Once the configuration of Bastion is complete, you should see the graphical logi
 
 <img alt="Ready state" src="readme/bastion_ready.png" title="Bastion VM is ready" width="500"/>
 
-### Verify that the nested VHI cluster is fully configured.
+### Verify that the nested Virtuozzo Infrastructure cluster is fully configured.
 
 Students are expected to work with their sandbox using an RDP connection to Bastion VM.
-To verify that the nested VHI cluster is ready for students to begin training, do the following:
+To verify that the nested Virtuozzo Infrastructure cluster is ready for students to begin training, do the following:
 
 1. Connect to the Bastion VM using the RDP client. Use the address and credentials from `terraform output bastion_connection_info`.
-2. Access nested VHI Admin Panel using desktop shortcut (username `admin`; password: `Lab_admin`):
+2. Access nested Virtuozzo Infrastructure Admin Panel using desktop shortcut (username `admin`; password: `Lab_admin`):
 
-<img alt="Bastion VM desktop shortcut" src="readme/bastion_desktop.png" title="Connecting to VHI Admin Panel" width="500"/>
+<img alt="Bastion VM desktop shortcut" src="readme/bastion_desktop.png" title="Connecting to Virtuozzo Infrastructure Admin Panel" width="500"/>
 
 3. Navigate to the Compute section in the left-hand menu:
 
