@@ -27,8 +27,8 @@ resource "openstack_networking_subnet_v2" "lab-private_net-subnet" {
 }
 
 resource "openstack_networking_network_v2" "lab-public_net" {
-  name = var.public_net-name
-  port_security_enabled = "false"
+  name                   = var.public_net-name
+  port_security_enabled   = false
 }
 
 resource "openstack_networking_subnet_v2" "lab-public_net-subnet" {
@@ -40,8 +40,8 @@ resource "openstack_networking_subnet_v2" "lab-public_net-subnet" {
 }
 
 resource "openstack_networking_network_v2" "lab-vm_public_net" {
-  name = var.vm_public_net-name
-  port_security_enabled = "false"
+  name                   = var.vm_public_net-name
+  port_security_enabled   = false
 }
 
 resource "openstack_networking_subnet_v2" "lab-vm_public_net-subnet" {
