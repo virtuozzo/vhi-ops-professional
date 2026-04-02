@@ -50,7 +50,7 @@ Deploying this VM is one of the exercises students will take during the course._
 The repository contains:
 - Terraform plan files, ending with `.tf` extension.
 - Shell scripts, ending with `.sh` extension.
-- Auxiliary files required for students to complete the course (.zip)
+- Auxiliary files required for students to complete the course, including `WonderSI_Logos.zip`.
 
 Terraform plan files follow this naming scheme:
 - `00_vars_*.tf` files contain variables.
@@ -66,19 +66,25 @@ To use this automation, your environment must meet the requirements described be
 
 **How to test if nested virtualization is enabled.**
 
-On Intel CPUs, you can test if the cloud supports nested virtualization by deploying a test VM
-and executing the following command:
+Deploy a test VM and run the following on the guest (Intel exposes `vmx`, AMD exposes `svm`):
 
-```# cat /proc/cpuinfo | grep vmx```
+```bash
+grep -E 'vmx|svm' /proc/cpuinfo
+```
+
+If this prints matching lines, the VM likely exposes hardware virtualization flags to the guest (nested virtualization may be available; the hypervisor and cloud policy still apply).
 
 ### Project resource quotas
 
 The cloud project must provide the following resources:
 
-- vCPU: 74 cores.
-- RAM: 148 GiB.
-- Disk space: 2000 GiB.
-- Public IPs: 2.
+- vCPU: 68 cores.
+- RAM: 132 GiB.
+- Disk space: ~1760 GiB.
+- **1 floating IP** for the bastion (student RDP and access).
+- **1 public IP** for the lab router (SNAT / external connectivity to the sandbox network).
+
+These figures are **project minimums that include the course lab exercise**, not only what the first `terraform apply` consumes. During the course, students deploy **`node5.lab`** as an additional worker (same size as existing workers: 8 vCPU, 16 GiB RAM, and 150 GiB plus 2×100 GiB volumes on the chosen storage policy). Your cloud may count router and bastion addresses separately in quota or UI; the stack uses one floating IP resource for the bastion and a separate public address path for the router on the external network.
 
 ### Images
 
@@ -116,6 +122,8 @@ cd vhi-ops-professional
 Download and install Terraform for your operating system from 
 [Terraform website](https://developer.hashicorp.com/terraform/downloads).
 
+Use **Terraform 0.14.0 or newer** (see `required_version` in the root module). This configuration pins the **OpenStack** provider to **~> 1.48** and **random** to **~> 3.5**; run `terraform init` in the repository root so the correct provider versions are installed.
+
 ### Step 3: Adjust Terraform Variables
 
 You will need to adjust four variable files: 
@@ -131,7 +139,7 @@ For example, if your SSH key is located in `~/.ssh/student.pub`, the variable sh
 
 ```
 ## Bastion/Node access SSH key
-variable "ssh-key" {
+variable "ssh_key" {
   type    = string
   default = "~/.ssh/student.pub" # Replace with the path to your public SSH key
 }
@@ -194,7 +202,7 @@ You need to adjust four variables in the `00_vars_vhi_cluster.tf` file:
 
 ##### VHI Image name
 
-You need to set the `vhi_image` variable to the name of the VHI image in your project.
+You need to set the `vhi-image` variable to the name (or UUID—see below) of the VHI image in your project.
 For example, if in your cloud, the VHI image is named `VHI-latest.qcow2`, the variable should look like this:
 
 ```
@@ -206,9 +214,19 @@ variable "vhi-image" {
 
 ```
 
+**Name vs UUID:** Variable `vhi-image_isUUID` defaults to `false`. In that mode, Terraform looks up `vhi-image` by **image name** in Glance. If your cloud has images of different versions with the same name (e.g. `VHI-latest.qcow2`) set `vhi-image_isUUID` to `true` and set `vhi-image` to the UUID string (the name lookup is skipped).
+
+```
+## Set to true when vhi-image is a Glance image UUID, not a name
+variable "vhi-image_isUUID" {
+  type    = bool
+  default = false
+}
+```
+
 ##### Main node flavor
 
-You need to set the `flavor_main` variable to the flavor name that provides at least 16 CPU cores and 32 GiB RAM.
+You need to set the `vhi-flavor_main` variable to the flavor name that provides at least 16 CPU cores and 32 GiB RAM.
 For example, if in your cloud such flavor is named `va-16-32`, the variable should look like this:
 
 ```
@@ -221,7 +239,7 @@ variable "vhi-flavor_main" {
 
 ##### Worker node flavor
 
-You need to set the `flavor_worker` variable to the flavor name that provides at least 8 CPU cores and 16 GiB RAM.
+You need to set the `vhi-flavor_worker` variable to the flavor name that provides at least 8 CPU cores and 16 GiB RAM.
 For example, if in your cloud such flavor is named `va-8-16`, the variable should look like this:
 
 ```
