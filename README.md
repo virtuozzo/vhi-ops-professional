@@ -36,15 +36,15 @@ This repository provisions a nested Virtuozzo Infrastructure (VHI) sandbox for t
 | `lab_track` | Curriculum |
 |-------------|------------|
 | **`operations`** (default) | Standard operations track: **VM_Public** lab network and a **fourth NIC** on cluster nodes; cloud-init [`cloud-init/node.operations.sh`](cloud-init/node.operations.sh) and [`cloud-init/bastion.operations.sh`](cloud-init/bastion.operations.sh). **`node5.lab` is not created by Terraform**—deploying it is a student exercise. |
-| **`s3`** | Object storage (S3) track: **three NICs**, no VM_Public network; [`cloud-init/node.s3.sh`](cloud-init/node.s3.sh) and [`cloud-init/bastion.s3.sh`](cloud-init/bastion.s3.sh). **No `node5.lab` exercise.** If `vhi-cluster_name` is left empty ([`00_vars_vhi_cluster.tf`](00_vars_vhi_cluster.tf)), the storage cluster defaults to **`vhi-s3-ops-lab`**. |
+| **`s3`** | Object storage (S3) track: **three NICs**, no VM_Public network; **three main nodes only** (no separate worker VMs—`vhi-worker_count` is ignored). [`cloud-init/node.s3.sh`](cloud-init/node.s3.sh) and [`cloud-init/bastion.s3.sh`](cloud-init/bastion.s3.sh). **No `node5.lab` exercise.** If `vhi-cluster_name` is left empty ([`00_vars_vhi_cluster.tf`](00_vars_vhi_cluster.tf)), the storage cluster defaults to **`vhi-s3-ops-lab`**. |
 
 **Do not change `lab_track` on an existing workspace** without destroying and recreating the environment: network layout and instance `user_data` differ by track.
 
-The sandbox is **five VMs** (bastion plus `node1.lab`–`node4.lab`) and virtual networks. Here is the reference diagram:
+The **operations** track is **five VMs** (bastion plus `node1.lab`–`node4.lab`). The **S3** track is **four VMs** (bastion plus **`node1.lab`–`node3.lab`** only). Virtual networks match each track. Reference diagram:
 
 <img alt="Diagram" src="readme/infra_diagram.png" title="Sandbox Infrastructure Diagram" width="500"/>
 
-_If the diagram shows an extra cluster node, it is only relevant to the **operations** track’s optional `node5.lab` exercise; the **s3** track stops at four cluster nodes._
+_If the diagram shows more cluster nodes, treat extras as **operations**-track context (`node4` / optional `node5.lab` exercise); **S3** uses three main nodes only._
 
 ### Pre-configured domain and users (S3 track)
 
@@ -106,11 +106,11 @@ These are **not** only what the first `terraform apply` consumes; they reserve h
 
 #### S3 track (`lab_track = "s3"`)
 
-Aligned with default flavors and node counts after a single **`terraform apply`** (no fifth node):
+Aligned with default flavors after a single **`terraform apply`**: bastion (2 vCPU / 4 GiB) plus **three** main nodes (16 vCPU / 32 GiB each)—**no worker VMs**.
 
-- vCPU: 58 cores.
-- RAM: 116 GiB.
-- Disk space: ~1410 GiB.
+- vCPU: 50 cores.
+- RAM: 100 GiB.
+- Disk space: ~1060 GiB (bastion 10 GiB + three nodes × (150 + 2×100) GiB volumes).
 
 ### Images
 
@@ -267,7 +267,7 @@ variable "vhi-flavor_main" {
 
 ##### Worker node flavor
 
-You need to set the `vhi-flavor_worker` variable to the flavor name that provides at least 8 CPU cores and 16 GiB RAM.
+For **`lab_track = "operations"`** only, set the `vhi-flavor_worker` variable to the flavor name that provides at least 8 CPU cores and 16 GiB RAM. **S3 track** does not deploy workers; this variable is unused there.
 For example, if in your cloud such flavor is named `va-8-16`, the variable should look like this:
 
 ```

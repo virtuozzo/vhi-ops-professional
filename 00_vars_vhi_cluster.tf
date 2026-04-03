@@ -34,7 +34,7 @@ variable "vhi-mn_count" {
   default = 3
 }
 
-## Number of worker nodes
+## Number of worker nodes (ignored when lab_track = s3; S3 track deploys main nodes only)
 variable "vhi-worker_count" {
   type    = number
   default = 1

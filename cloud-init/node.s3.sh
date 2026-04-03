@@ -200,7 +200,10 @@ cs_disk_2=$(lsblk -nbdo NAME,SIZE | grep -v sr | awk '$2 < 150000000000 {print $
 log_msg "Storage configuration. Second CS disk found: $cs_disk_2"
 
 # If running on node1 - deploy Storage and Compute.
-# If on any other node - join Storage and Compute
+# If on any other node - join Storage and Compute.
+#
+# This script supports **zero worker nodes** (S3 track): only main nodes (e.g. node1–node3)
+# are provisioned. HA uses node1,node2,node3; compute_nodes is built from vinfra node list.
 if [ "$(hostname)" = "node1.lab" ]
 then ### Code running only on node1
     # Initiate backend
@@ -293,14 +296,14 @@ then ### Code running only on node1
     no_ip_interfaces=$(vinfra node iface list --all | grep \\[\\] | wc -l)
     done
 
-    # Wait until other nodes register in backend
+    # Wait until other nodes register in backend (main nodes only when workers = 0)
     log_msg "Waiting for other nodes to register..."
-    unassigned_nodes_count=$(vinfra --vinfra-password ${password_admin} node list -f value -c host -c is_assigned | grep -c False)
-    while [ "0" != "$unassigned_nodes_count" ]
+    unassigned_nodes_count=$(vinfra --vinfra-password ${password_admin} node list -f value -c host -c is_assigned | grep -c False || true)
+    while [ "0" != "${unassigned_nodes_count:-0}" ]
     do
     log_msg "There are $unassigned_nodes_count unassigned nodes left. waiting..."
     sleep 10
-    unassigned_nodes_count=$(vinfra --vinfra-password ${password_admin} node list -f value -c host -c is_assigned | grep -c False)
+    unassigned_nodes_count=$(vinfra --vinfra-password ${password_admin} node list -f value -c host -c is_assigned | grep -c False || true)
     done 
     log_msg "Waiting for other nodes to register...done"
 

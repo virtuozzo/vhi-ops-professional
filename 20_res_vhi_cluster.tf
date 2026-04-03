@@ -71,9 +71,9 @@ resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
   )
 }
 
-## VHI worker node instances
+## VHI worker node instances (not created when lab_track = s3; see local.worker_node_count)
 resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
-  count     = var.vhi-worker_count # default = 1
+  count     = local.worker_node_count
   name      = "node${count.index + 4}.lab"
   flavor_id = data.openstack_compute_flavor_v2.vhi-flavor_worker.id
   key_pair  = openstack_compute_keypair_v2.ssh_key.name
