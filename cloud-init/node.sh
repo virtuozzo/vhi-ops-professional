@@ -14,9 +14,16 @@
 LAB_TRACK="${lab_track}"
 ENABLE_CLUSTER_COMPUTE="${enable_cluster_compute}"
 
-track_is_s3() { [[ "$LAB_TRACK" == "s3" ]]; }
-# Non-S3 tracks share the same storage / VM_Public / compute layout (operations, vzsup).
-track_is_not_s3() { [[ "$LAB_TRACK" != "s3" ]]; }
+case "$LAB_TRACK" in
+  operations) ;;
+  s3) ;;
+  vzsup) ;;
+  *)
+    echo "node.sh: unsupported lab_track '$LAB_TRACK' (expected operations, s3, or vzsup)" >&2
+    exit 1
+    ;;
+esac
+
 cluster_compute_enabled() { [[ "$ENABLE_CLUSTER_COMPUTE" == "true" ]]; }
 
 token=""
@@ -208,12 +215,12 @@ restart_network_ifaces() {
 discover_disks_mds_cs() {
   mds_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 > 150000000000 {print $1}' | head -n 1)
   lab_log INFO "Storage configuration. MDS disk found: $mds_disk"
-  if track_is_s3; then
+  if [[ "$LAB_TRACK" == "s3" ]] || [[ "$LAB_TRACK" == "vzsup" ]]; then
     cs_disk=$(lsblk -nbdo NAME,SIZE | grep -v sr | awk '$2 < 150000000000 {print $1}' | head -n 1)
     cs_disk_2=$(lsblk -nbdo NAME,SIZE | grep -v sr | awk '$2 < 150000000000 {print $1}' | tail -n 1)
     lab_log INFO "Storage configuration. CS disk found: $cs_disk"
     lab_log INFO "Storage configuration. Second CS disk found: $cs_disk_2"
-  else
+  elif [[ "$LAB_TRACK" == "operations" ]]; then
     cs_disk=$(lsblk -nbdo NAME,SIZE | awk '$2 < 150000000000 {print $1}' | grep -v sr | head -n 1)
     lab_log INFO "Storage configuration. CS disk found: $cs_disk"
   fi
@@ -250,7 +257,7 @@ node1_start_backend_register() {
 
 node1_cluster_networks_and_traffic() {
   lab_log INFO "Creating additional infrastructure networks..."
-  if track_is_not_s3; then
+  if [[ "$LAB_TRACK" == "operations" ]] || [[ "$LAB_TRACK" == "vzsup" ]]; then
     vinfra --vinfra-password ${password_admin} cluster network create Storage
     vinfra --vinfra-password ${password_admin} cluster network create VM_Public
     lab_log INFO "Created Storage and VM_public network"
@@ -266,7 +273,7 @@ node1_cluster_networks_and_traffic() {
   cluster_compute_enabled && assign_iface eth3 VM_Public
 
   lab_log INFO "Configuring traffic types..."
-  if track_is_not_s3; then
+  if [[ "$LAB_TRACK" == "operations" ]] || [[ "$LAB_TRACK" == "vzsup" ]]; then
     vinfra --vinfra-password ${password_admin} cluster network set-bulk \
     --network 'Private':'Backup (ABGW) private','Internal management','SNMP','SSH','VM private' \
     --network 'Public':'Backup (ABGW) public','Compute API','iSCSI','VM backups','NFS','S3 public','Self-service panel','SSH','Admin panel' \
@@ -296,7 +303,7 @@ node1_wait_installing_dns_sleep() {
   lab_log INFO "Configuring cluster DNS settings..."
   vinfra --vinfra-password ${password_admin} cluster settings dns set --nameservers "8.8.8.8,1.1.1.1"
 
-  if track_is_not_s3; then
+  if [[ "$LAB_TRACK" == "operations" ]] || [[ "$LAB_TRACK" == "vzsup" ]]; then
     lab_log INFO "Waiting 120 sec. for disks to initialize before deploying storage cluster."
     sleep 120
   else
@@ -306,13 +313,13 @@ node1_wait_installing_dns_sleep() {
 
 node1_create_storage_cluster() {
   lab_log INFO "Deploying storage cluster..."
-  if track_is_not_s3; then
+  if [[ "$LAB_TRACK" == "operations" ]]; then
     retry vinfra --vinfra-password ${password_admin} cluster create \
     --disk $mds_disk:mds-system \
     --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
     --node "$node_id" ${cluster_name} \
     --wait
-  else
+  elif [[ "$LAB_TRACK" == "s3" ]] || [[ "$LAB_TRACK" == "vzsup" ]]; then
     retry vinfra --vinfra-password ${password_admin} cluster create \
     --disk $mds_disk:mds-system \
     --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
@@ -330,7 +337,7 @@ node1_create_storage_cluster() {
 }
 
 node1_wait_ifaces_ready() {
-  if track_is_not_s3; then
+  if [[ "$LAB_TRACK" == "operations" ]] || [[ "$LAB_TRACK" == "vzsup" ]]; then
     no_ip_interfaces=$(vinfra node iface list --all | grep -v eth3 | grep \\[\\] | wc -l)
     while [ "0" != "$no_ip_interfaces" ]
     do
@@ -362,7 +369,7 @@ node1_wait_unassigned_zero() {
 }
 
 node1_post_storage_extras() {
-  if track_is_not_s3; then
+  if [[ "$LAB_TRACK" == "operations" ]] || [[ "$LAB_TRACK" == "vzsup" ]]; then
     remove_ipv4_from_iface eth3 "node1.vstoragedomain"
     remove_ipv4_from_iface eth3 "node2.vstoragedomain"
     remove_ipv4_from_iface eth3 "node3.vstoragedomain"
@@ -420,19 +427,6 @@ node1_compute_setup() {
   lab_log INFO "Creating compute cluster...done"
 }
 
-node1_main() {
-  discover_disks_mds_cs
-  node1_start_backend_register
-  node1_cluster_networks_and_traffic
-  node1_wait_installing_dns_sleep
-  node1_create_storage_cluster
-  node1_wait_ifaces_ready
-  node1_wait_unassigned_zero
-  node1_post_storage_extras
-  node1_ha_setup
-  cluster_compute_enabled && node1_compute_setup
-}
-
 join_node_register_and_assign() {
   systemctl start vstorage-ui-agent
   lab_log INFO "Started vstorage-ui-agent service"
@@ -473,12 +467,12 @@ join_node_wait_and_join() {
   sleep 120
   node_id=`hostname`
   lab_log INFO "Joining the storage cluster..."
-  if track_is_not_s3; then
+  if [[ "$LAB_TRACK" == "operations" ]]; then
     retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} \
       "vinfra --vinfra-password ${password_admin} node join \
       --disk $mds_disk:mds-system --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
       $node_id --wait"
-  else
+  elif [[ "$LAB_TRACK" == "s3" ]] || [[ "$LAB_TRACK" == "vzsup" ]]; then
     retry sshpass -p ${password_root} ssh -o 'StrictHostKeyChecking=no' -o LogLevel=QUIET root@${mn_ip} \
       "vinfra --vinfra-password ${password_admin} node join \
       --disk $mds_disk:mds-system --disk $cs_disk:cs:tier=0,journal-type=inner_cache \
@@ -486,6 +480,19 @@ join_node_wait_and_join() {
       $node_id --wait"
   fi
   lab_log INFO "Joining the storage cluster...done"
+}
+
+node1_main() {
+  discover_disks_mds_cs
+  node1_start_backend_register
+  node1_cluster_networks_and_traffic
+  node1_wait_installing_dns_sleep
+  node1_create_storage_cluster
+  node1_wait_ifaces_ready
+  node1_wait_unassigned_zero
+  node1_post_storage_extras
+  node1_ha_setup
+  cluster_compute_enabled && node1_compute_setup
 }
 
 join_node_main() {

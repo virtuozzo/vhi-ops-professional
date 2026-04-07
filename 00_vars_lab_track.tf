@@ -98,7 +98,7 @@ variable "bastion-storage_policy" {
 
 variable "ssh_key" {
   type        = string
-  default     = "~/.ssh/akochkov.pub"
+  default     = "~/.ssh/id_rsa.pub"
   description = "Path to your public SSH key for bastion and cluster nodes."
 }
 
