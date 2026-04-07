@@ -1,4 +1,4 @@
-## Network data
+## Network data (OpenStack external network for router SNAT and bastion floating IP pool)
 data "openstack_networking_network_v2" "lab-external_net" {
   name = var.external_network-name
 }
