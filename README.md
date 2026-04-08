@@ -1,6 +1,5 @@
 <!-- TOC -->
   * [Description](#description)
-    * [Pre-configured domain and users (S3 track)](#pre-configured-domain-and-users-s3-track)
   * [Structure and conventions](#structure-and-conventions)
   * [Pre-requisites](#pre-requisites)
     * [Nested virtualization support](#nested-virtualization-support)
@@ -10,17 +9,17 @@
     * [Step 1: Clone the repository](#step-1-clone-the-repository)
     * [Step 2: Install Terraform](#step-2-install-terraform)
     * [Step 3: Adjust Terraform Variables](#step-3-adjust-terraform-variables)
-      * [Adjust SSH key path](#adjust-ssh-key-path)
-      * [Adjust Bastion VM variables](#adjust-bastion-vm-variables)
-        * [Bastion image name](#bastion-image-name)
-        * [Bastion flavor](#bastion-flavor)
-        * [Bastion storage policy](#bastion-storage-policy)
       * [Adjust Virtuozzo Infrastructure node variables](#adjust-virtuozzo-infrastructure-node-variables)
         * [Virtuozzo Infrastructure Image name](#virtuozzo-infrastructure-image-name)
         * [Main node flavor](#main-node-flavor)
         * [Worker node flavor](#worker-node-flavor)
         * [Virtuozzo Infrastructure node storage policy](#virtuozzo-infrastructure-node-storage-policy)
       * [Adjust networking variables](#adjust-networking-variables)
+      * [Adjust Bastion VM variables](#adjust-bastion-vm-variables)
+        * [Bastion image name](#bastion-image-name)
+        * [Bastion flavor](#bastion-flavor)
+        * [Bastion storage policy](#bastion-storage-policy)
+      * [Adjust SSH key path](#adjust-ssh-key-path)
     * [Step 4: Adjust and source the OpenStack credentials file](#step-4-adjust-and-source-the-openstack-credentials-file)
     * [Step 5: Provision the sandbox](#step-5-provision-the-sandbox)
   * [Retrieving Bastion VM credentials](#retrieving-bastion-vm-credentials)
@@ -33,33 +32,13 @@
 
 This repository provisions a nested Virtuozzo Infrastructure (VHI) sandbox for the **Virtuozzo Infrastructure Operations Professional** courses. **One codebase** supports multiple curricula via Terraform variable **`lab_track`** in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
 
-| `lab_track` | Curriculum |
-|-------------|------------|
-| **`operations`** | Standard operations track: **VM_Public** lab network and a **fourth NIC** on cluster nodes (same condition as automated **cluster compute**); cloud-init [`cloud-init/node.sh`](cloud-init/node.sh) and [`cloud-init/bastion.sh`](cloud-init/bastion.sh) (Terraform prepends shared [`cloud-init/_lab_log.sh`](cloud-init/_lab_log.sh)). **`node5.lab` is not created by Terraform**—deploying it is a student exercise. Router SNAT and bastion floating IP use **`external_network-name`** (default **`public`**). |
-| **`s3`** | Object storage (S3) track: **three NICs**, no VM_Public network; **three main nodes only** (see **`worker_node_count`** in **`lab_track_profiles`** in [`00_vars_lab_track.tf`](00_vars_lab_track.tf)). Same [`cloud-init/node.sh`](cloud-init/node.sh) and [`cloud-init/bastion.sh`](cloud-init/bastion.sh) with track-specific behavior via **`lab_track`**. **Storage cluster and HA are deployed automatically; the compute cluster is not** (students or instructors deploy compute separately if needed). **No `node5.lab` exercise.** Bastion omits S3-only sample files/extra hosts entries on other tracks. Storage cluster name **`vhi-s3-ops-lab`** is set by **`default_cluster_name`** in the profile (not a separate variable). |
-| **`vzsup`** | Same **nested cluster** automation as **operations** (**`mn_count`** / **`worker_node_count`** per profile, **VM_Public**, **HA + compute**). Default storage cluster name **`vhi-vzsup-lab`**. **No bastion** or bastion FIP (`deploy_bastion = false` in the profile). Router SNAT uses **`external_network-name`** like other tracks. No S3-only bastion extras. |
-
 **Do not change `lab_track` on an existing workspace** without destroying and recreating the environment: network layout and instance `user_data` differ by track.
 
-The **operations** track is **five VMs** by default (bastion plus `node1.lab`–`node4.lab` with one worker per the profile). The **vzsup** track deploys **only cluster nodes** (counts from **`lab_track_profiles`**)—**no bastion**. The **S3** track is **four VMs** (bastion plus **`node1.lab`–`node3.lab`** only). Virtual networks match each track. Reference diagram:
+The **operations** track is **five VMs** by default (bastion plus `node1.lab`–`node4.lab` with one worker per the profile). The **S3** track is **four VMs** (bastion plus **`node1.lab`–`node3.lab`** only). Virtual networks match the selected **`lab_track`**. Reference diagram:
 
 <img alt="Diagram" src="readme/infra_diagram.png" title="Sandbox Infrastructure Diagram" width="500"/>
 
-_If the diagram shows more cluster nodes, treat extras as **operations** / **vzsup** context (`node4` / optional `node5.lab` exercise); **S3** uses three main nodes only._
-
-### Pre-configured domain and users (S3 track)
-
-When **`lab_track = "s3"`**, during first-boot on **`node1.lab` only**, [`cloud-init/node.sh`](cloud-init/node.sh) creates:
-
-| Item | Detail |
-|------|--------|
-| Domain | **WonderSI** |
-| Project | **MyProject** (under WonderSI) |
-| User | **domainadmin** (domain_admin + project_admin on MyProject) |
-| Password | Same value as Terraform **`vhi-password_admin`** (default **`Lab_admin`** unless you override it). |
-| Cluster DNS | Forwarders **8.8.8.8** and **1.1.1.1** via `vinfra cluster settings dns set`. |
-
-**Admin Panel** login (see [Verifying results](#verifying-results)) uses **`admin`** / **`Lab_admin`** by default—the same default as **`vhi-password_admin`** when variables are unchanged. **`domainadmin`** is for WonderSI / MyProject work in S3 labs.
+_If the diagram shows more cluster nodes, treat extras as **operations** context (`node4` / optional `node5.lab` exercise); **S3** uses three main nodes only._
 
 ## Structure and conventions
 
@@ -67,10 +46,10 @@ The repository contains:
 - Terraform plan files, ending with `.tf` extension.
 - Cloud-init scripts under [`cloud-init/`](cloud-init/): [`node.sh`](cloud-init/node.sh) and [`bastion.sh`](cloud-init/bastion.sh), with behavior gated by **`lab_track`** (Terraform also prepends [`_lab_log.sh`](cloud-init/_lab_log.sh) for shared logging).
 - `openstack-creds.sh` for sourcing cloud credentials.
-- Auxiliary files for students, including `WonderSI_Logos.zip` (branding aligned with the **WonderSI** domain on the S3 track).
+- Auxiliary files for students, including `WonderSI_Logos.zip`.
 
 Terraform plan files follow this naming scheme:
-- [`00_vars_lab_track.tf`](00_vars_lab_track.tf) — student/operator variables: **`lab_track`**, per-track **`lab_track_profiles`**, and shared settings (images, flavors, networks, bastion, SSH, passwords).
+- [`00_vars_lab_track.tf`](00_vars_lab_track.tf) — student/operator variables in file order: **`lab_track`**; VHI image, flavors, storage; **`external_network-name`**; bastion image, flavor, storage; **`ssh_key`**; then **`locals.lab_track_profiles`** at the bottom of the file.
 - `10_data_*.tf` files contain runtime data collection modules.
 - `20_res_*.tf` files contain resource definitions.
 
@@ -93,7 +72,7 @@ If this prints matching lines, the VM likely exposes hardware virtualization fla
 
 ### Project resource quotas
 
-Requirements depend on **`lab_track`**. **Operations** and **s3** need **1 floating IP** for the bastion and **1 address** on the cloud external network for the lab router (SNAT). **Vzsup** has the same router SNAT requirement but **no bastion** (no bastion FIP).
+You need **1 floating IP** for the bastion and **1 address** on the cloud external network for the lab router (SNAT).
 
 #### Operations track (`lab_track = "operations"`)
 
@@ -106,10 +85,6 @@ Recommended minimums, **including** the extra worker students add as **`node5.la
 - Disk space: ~1760 GiB.
 
 These are **not** only what the first `terraform apply` consumes; they reserve headroom for the lab exercise.
-
-#### VZSup track (`lab_track = "vzsup"`)
-
-Same nested cluster automation as **operations**, but **no bastion** (`deploy_bastion = false` in the profile). Router still uses **`external_network-name`** for SNAT. Plan **vCPU / RAM / disk** like **operations** minus the bastion, using profile **`mn_count`**, **`worker_node_count`**, and **`vhi-flavor_worker`** from [`00_vars_lab_track.tf`](00_vars_lab_track.tf) (no **`node5.lab`** exercise).
 
 #### S3 track (`lab_track = "s3"`)
 
@@ -127,7 +102,7 @@ The project you are working with must have the following images:
   - https://repo.virtuozzo.com/vz-platform/releases/7.0/x86_64/iso/vz-platform-7.0.iso
 - Virtuozzo Infrastructure QCOW2 image
   - https://downloads.virtuozzo.com/vzlinux-iso-hci-7.0.0-251.qcow2
-- Ubuntu 20.04 QCOW2 image (for the **bastion** VM on **operations** and **s3** only; **vzsup** does not deploy a bastion)
+- Ubuntu 20.04 QCOW2 image (for the **bastion** VM)
   - https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img
 
 Please do not use other versions of Virtuozzo Infrastructure or Ubuntu images, as the deployment script will likely fail to configure them.
@@ -152,86 +127,31 @@ cd vhi-ops-professional
 
 ### Step 2: Install Terraform
 
-Download and install Terraform for your operating system from 
-[Terraform website](https://developer.hashicorp.com/terraform/downloads).
+Download and install Terraform for your operating system from [Terraform website](https://developer.hashicorp.com/terraform/downloads).
 
 Use **Terraform 0.14.0 or newer** (see `required_version` in the root module). This configuration pins the **OpenStack** provider to **~> 1.48** and **random** to **~> 3.5**; run `terraform init` in the repository root so the correct provider versions are installed.
 
 ### Step 3: Adjust Terraform Variables
 
-You will need to review and usually adjust variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
+You will need to review and usually adjust variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf). They appear **in this order** in that file:
 
-- **`lab_track`** — **`operations`**, **`s3`**, or **`vzsup`** (or pass **`-var='lab_track=…'`** / use `*.auto.tfvars`; see Step 5).
-- **`lab_track_profiles`** (in `locals`) — per-track **`mn_count`**, **`worker_node_count`**, **`deploy_bastion`**, **`enable_cluster_compute`**, **`default_cluster_name`**.
-- **General variables** in the same file — SSH key, VHI image/flavors/storage/passwords, **`external_network-name`**, bastion image/flavor/storage (bastion resources are skipped when the profile sets **`deploy_bastion = false`**). Internal lab networks are fixed in [`20_res_network.tf`](20_res_network.tf).
+1. **`lab_track`** — **`operations`** or **`s3`**, depending on the course you are completing.
+2. **Virtuozzo Infrastructure nodes:** **`vhi-image`**, **`vhi-image_isUUID`**, **`vhi-flavor_main`**, **`vhi-flavor_worker`**, **`vhi-storage_policy`**.
+3. **Networking:** **`external_network-name`** (Neutron external network for the lab router SNAT and bastion floating IP when a bastion is deployed). Internal lab network names and CIDRs are fixed in [`20_res_network.tf`](20_res_network.tf).
+4. **Bastion:** **`bastion-image`**, **`bastion-flavor`**, **`bastion-storage_policy`** (ignored when the selected profile sets **`deploy_bastion = false`**).
+5. **`ssh_key`** — path to your public SSH key for the bastion and cluster nodes.
+6. **`lab_track_profiles`** — at the **bottom** of the file, inside the `locals` block: per-track **`mn_count`**, **`worker_node_count`**, **`deploy_bastion`**, **`enable_cluster_compute`**, **`default_cluster_name`**. Normally you only set **`lab_track`**; change the profile map only if you know what you are doing.
 
-#### Adjust SSH key path
-
-Set the `ssh_key` variable in [`00_vars_lab_track.tf`](00_vars_lab_track.tf) to point to your public SSH key.
-For example, if your SSH key is located in `~/.ssh/student.pub`, the variable should look like this:
-
-```
-## Bastion/Node access SSH key
-variable "ssh_key" {
-  type    = string
-  default = "~/.ssh/student.pub" # Replace with the path to your public SSH key
-}
-```
-
-#### Adjust Bastion VM variables 
-
-Adjust bastion variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
-1. Bastion image name.
-2. Bastion flavor.
-3. Bastion storage policy
-
-
-##### Bastion image name
-
-You need to set the `bastion-image` variable to the name of the Bastion image in your project.
-For example, if in your cloud Bastion image is named `Ubuntu-20.04`, the variable should look like this:
-
-```
-## Bastion image
-variable "bastion-image" {
-  type = string
-  default = "Ubuntu-20.04" # If required, replace the image name with the one you have in the cloud
-}
-```
-
-##### Bastion flavor
-
-You need to set the `bastion-flavor` variable to the flavor name that provides at least 2 CPU cores and 4 GiB RAM.
-For example, if in your cloud such flavor is named `va-2-4`, the variable should look like this:
-
-```
-## Bastion flavor
-variable "bastion-flavor" {
-  type = string
-  default = "va-2-4"      # If required, replace the flavor name with the one you have in the cloud
-}
-```
-
-##### Bastion storage policy
-
-You need to set the `bastion-storage_policy` variable to the storage policy with at least 10GB of storage in the project's quota.
-For example, if in your cloud such policy is named `default`, the variable should look like this:
-
-```
-## Bastion storage policy
-variable "bastion-storage_policy" {
-  type    = string
-  default = "default"     # If required, replace the storage policy with the one you have in the cloud
-}
-```
+The subsections below follow the same order (VHI → networking → bastion → SSH). **`lab_track`** and **`lab_track_profiles`** are summarized in the numbered list above.
 
 #### Adjust Virtuozzo Infrastructure node variables
 
-Adjust VHI node variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
-1. Virtuozzo Infrastructure image name.
+Adjust VHI node variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf), in file order:
+
+1. Virtuozzo Infrastructure image name (`vhi-image`, `vhi-image_isUUID`).
 2. Main node flavor.
 3. Worker node flavor.
-4. Virtuozzo Infrastructure node storage policy
+4. Virtuozzo Infrastructure node storage policy.
 
 ##### Virtuozzo Infrastructure Image name
 
@@ -272,7 +192,7 @@ variable "vhi-flavor_main" {
 
 ##### Worker node flavor
 
-For **`lab_track = "operations"`** or **`vzsup`**, set the `vhi-flavor_worker` variable to the flavor name that provides at least 8 CPU cores and 16 GiB RAM. **S3 track** does not deploy workers; this variable is unused there.
+For **`lab_track = "operations"`**, set the `vhi-flavor_worker` variable to the flavor name that provides at least 8 CPU cores and 16 GiB RAM. **S3 track** does not deploy workers; this variable is unused there.
 For example, if in your cloud such flavor is named `va-8-16`, the variable should look like this:
 
 ```
@@ -298,7 +218,7 @@ variable "vhi-storage_policy" {
 
 #### Adjust networking variables
 
-Set **`external_network-name`** (and other network variables if needed) in [`00_vars_lab_track.tf`](00_vars_lab_track.tf) to match your cloud.
+Set **`external_network-name`** in [`00_vars_lab_track.tf`](00_vars_lab_track.tf) to match your cloud.
 For example, if your physical network is called `public`, the variable should look like this:
 
 ```
@@ -309,6 +229,65 @@ variable "external_network-name" {
 }
 ```
 
+#### Adjust Bastion VM variables
+
+Adjust bastion variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
+
+1. Bastion image name.
+2. Bastion flavor.
+3. Bastion storage policy.
+
+##### Bastion image name
+
+You need to set the `bastion-image` variable to the name of the Bastion image in your project.
+For example, if in your cloud Bastion image is named `Ubuntu-20.04`, the variable should look like this:
+
+```
+## Bastion image
+variable "bastion-image" {
+  type = string
+  default = "Ubuntu-20.04" # If required, replace the image name with the one you have in the cloud
+}
+```
+
+##### Bastion flavor
+
+You need to set the `bastion-flavor` variable to the flavor name that provides at least 2 CPU cores and 4 GiB RAM.
+For example, if in your cloud such flavor is named `va-2-4`, the variable should look like this:
+
+```
+## Bastion flavor
+variable "bastion-flavor" {
+  type = string
+  default = "va-2-4"      # If required, replace the flavor name with the one you have in the cloud
+}
+```
+
+##### Bastion storage policy
+
+You need to set the `bastion-storage_policy` variable to the storage policy with at least 10GB of storage in the project's quota.
+For example, if in your cloud such policy is named `default`, the variable should look like this:
+
+```
+## Bastion storage policy
+variable "bastion-storage_policy" {
+  type    = string
+  default = "default"     # If required, replace the storage policy with the one you have in the cloud
+}
+```
+
+#### Adjust SSH key path
+
+Set the `ssh_key` variable in [`00_vars_lab_track.tf`](00_vars_lab_track.tf) to point to your public SSH key.
+For example, if your SSH key is located in `~/.ssh/student.pub`, the variable should look like this:
+
+```
+## Bastion/Node access SSH key
+variable "ssh_key" {
+  type    = string
+  default = "~/.ssh/student.pub" # Replace with the path to your public SSH key
+}
+```
 
 ### Step 4: Adjust and source the OpenStack credentials file
 
@@ -348,30 +327,14 @@ Initialize Terraform in the directory and apply the plan:
 terraform init && terraform apply
 ```
 
-**S3 track** (if you did not set `lab_track` in a `.tf` file):
-
-```
-terraform init && terraform apply -var='lab_track=s3'
-```
-
-You can also create a file such as `s3.auto.tfvars` containing `lab_track = "s3"` (keep it out of version control if it mixes with secrets; see `.gitignore`).
-
-**VZSup track** (no bastion; no cloud external network on the lab router):
-
-```
-terraform init && terraform apply -var='lab_track=vzsup'
-```
-
-**Changing `lab_track` after the fact** on the same state is not supported—destroy the stack (or use a fresh project/state) before switching tracks.
+**Changing `lab_track` after the fact** on the same state is not supported! Destroy the stack (or use a fresh project/state) before switching tracks.
 
 _**Wait at least 20 minutes before proceeding!
 Terraform will configure all VMs at first boot, which can take some time depending on the cloud performance and internet connection speed.**_
 
 ## Retrieving Bastion VM credentials
 
-When **`lab_track = "vzsup"`**, there is **no** bastion VM; `terraform output bastion_connection_info` is **`null`**. Skip this section for that track.
-
-The Bastion VM `student` user password is **automatically generated** by Terraform during deployment for **operations** and **s3**.
+The Bastion VM `student` user password is **automatically generated** by Terraform during deployment.
 After `terraform apply` completes, the connection details are displayed in the output:
 
 ```
@@ -406,7 +369,7 @@ After applying the Terraform plan and waiting for scripts to complete the enviro
 
 ### Verify Bastion VM completed provisioning
 
-**Skip for `lab_track = "vzsup"`** (no bastion). For **operations** and **s3**, connect to the Bastion VM using the remote console.
+Connect to the Bastion VM using the remote console.
 If Bastion VM is still being configured, you will see the following prompt:
 
 <img alt="&quot;Customization in progress&quot; Prompt" src="readme/bastion_not_ready.png" title="Bastion VM is not ready" width="500"/>
@@ -417,23 +380,17 @@ Once the configuration of Bastion is complete, you should see the graphical logi
 
 ### Verify that the nested Virtuozzo Infrastructure cluster is fully configured.
 
-For **operations** and **s3**, students typically use an **RDP** connection to the Bastion VM. For **vzsup**, reach the cluster Admin Panel using whatever access your environment provides to **`lab-public`** (for example **`https://10.0.102.10:8888`** when HA is up)—there is no Terraform-managed bastion.
+Students typically use an **RDP** connection to the Bastion VM.
 
 To verify that the nested Virtuozzo Infrastructure cluster is ready, do the following:
 
-1. **Operations / s3:** Connect to the Bastion VM using the RDP client. Use the address and credentials from `terraform output bastion_connection_info`. **VZSup:** Open the Admin Panel URL from a host that can route to the cluster VIP on **`lab-public`**.
-2. **Operations / s3:** Access nested Virtuozzo Infrastructure Admin Panel using the desktop shortcut (username `admin`; password: `Lab_admin`). **VZSup:** Open the Admin Panel in the browser (same credentials by default):
+1. Connect to the Bastion VM using the RDP client. Use the address and credentials from `terraform output bastion_connection_info`.
+2. Access nested Virtuozzo Infrastructure Admin Panel using the desktop shortcut and log in as **`admin`**:
 
 <img alt="Bastion VM desktop shortcut" src="readme/bastion_desktop.png" title="Connecting to Virtuozzo Infrastructure Admin Panel" width="500"/>
 
-3. **Operations or vzsup** (`lab_track = "operations"` or `"vzsup"`): Navigate to the Compute section in the left-hand menu:
-
-<img alt="Admin Panel Compute" src="readme/admin_panel_compute.png" title="Navigating to Compute cluster overview screen in Admin Panel" width="500"/>
-
-You should see the compute cluster deployment progress bar:
+**Operations track (`lab_track = "operations"`):** After the compute cluster starts deploying, expect **about an hour** before initialization finishes; wait until the Admin Panel shows that process complete before treating the environment as ready.
 
 <img alt="Compute Deployment Progress Bar" src="readme/compute_progress_bar.png" title="Compute Cluster deployment in progress" width="500"/>
 
-**_Once the compute cluster is deployed, the operations- or vzsup-track cluster automation is complete._** (VZSup still requires your own path to the UI as described above.)
-
-**S3 track (`lab_track = "s3"`):** Terraform and first-boot automation deploy **storage** and **HA** only; there is **no** automated compute cluster. Confirm storage and HA in the Admin Panel; deploy compute manually when your curriculum requires it.
+**S3 track (`lab_track = "s3"`):** Terraform and first-boot automation deploy **storage** and **HA** only—there is **no** automated compute cluster. Initialization is effectively done once the **storage** cluster is configured, which usually takes **about 20 minutes**. Confirm storage and HA in the Admin Panel.

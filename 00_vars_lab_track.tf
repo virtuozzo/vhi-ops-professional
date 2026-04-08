@@ -126,7 +126,7 @@ locals {
       enable_cluster_compute = true
       default_cluster_name   = "vhi-vzsup-lab"
       mn_count               = 3
-      worker_node_count      = 1
+      worker_node_count      = 0
       deploy_bastion         = false
     }
   }
