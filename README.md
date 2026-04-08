@@ -119,10 +119,10 @@ To provision a sandbox, you will need to complete five steps:
 ### Step 1: Clone the repository
 
 ``` 
-git clone https://github.com/virtuozzo/vhi-ops-professional
+git clone https://github.com/virtuozzo/vi-sandbox
 ```
 ```
-cd vhi-ops-professional
+cd vi-sandbox
 ```
 
 ### Step 2: Install Terraform
