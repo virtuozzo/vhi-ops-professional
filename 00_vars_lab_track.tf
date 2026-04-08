@@ -13,7 +13,7 @@
 
 variable "lab_track" {
   type        = string
-  default     = "s3"
+  default     = "operations"
   description = "Curriculum profile; selects one block from local.lab_track_profiles."
 
   validation {
