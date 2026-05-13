@@ -1,5 +1,6 @@
 # Unified bastion customization; lab_log from prepended _lab_log.sh.
 # Template vars: student_password, lab_track
+# Target: Debian stable + XFCE + xrdp (xorgxrdp) + optional TigerVNC.
 
 LAB_TRACK="${lab_track}"
 
@@ -53,10 +54,50 @@ bastion_banner_and_motd() {
   systemctl restart getty@tty1.service
 }
 
+bastion_apt_enable_firmware_components() {
+  lab_log INFO "Ensuring apt sources include contrib, non-free, and non-free-firmware where needed"
+  if grep -Rqs 'non-free-firmware' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
+    lab_log INFO "non-free-firmware already referenced in apt sources"
+    return 0
+  fi
+  if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+    sed -i \
+      -e 's/^Components: main$/Components: main contrib non-free non-free-firmware/' \
+      -e 's/^Components: main contrib$/Components: main contrib non-free non-free-firmware/' \
+      -e 's/^Components: main contrib non-free$/Components: main contrib non-free non-free-firmware/' \
+      /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+  fi
+  if grep -q '^deb ' /etc/apt/sources.list 2>/dev/null; then
+    sed -i 's/ main$/ main contrib non-free non-free-firmware/' /etc/apt/sources.list
+  fi
+}
+
+bastion_bootstrap_base_packages() {
+  run_apt "apt-get update -eany -q" "apt metadata refresh (bootstrap)"
+  run_apt "apt-get install -y -q sudo ca-certificates" "sudo and CA certs before creating student user"
+}
+
 bastion_student_and_ssh() {
   lab_log INFO "Setting up 'student' user"
   useradd -m -s /bin/bash -G sudo student
   echo "student:${student_password}" | chpasswd
+
+  for u in debian ubuntu; do
+    if [ -f "/home/$u/.ssh/authorized_keys" ]; then
+      lab_log INFO "Copying SSH authorized_keys from $u to student"
+      install -d -m 700 -o student -g student /home/student/.ssh
+      cp "/home/$u/.ssh/authorized_keys" /home/student/.ssh/authorized_keys
+      chmod 600 /home/student/.ssh/authorized_keys
+      chown -R student:student /home/student/.ssh
+      break
+    fi
+  done
+
+  lab_log INFO "Allowing password authentication for user student (OpenStack client over SSH)"
+  cat >/etc/ssh/sshd_config.d/90-student-auth.conf <<'SSHEOF'
+Match User student
+    PasswordAuthentication yes
+SSHEOF
 
   lab_log INFO "Reconfiguring the SSH port to 2228"
   sed -i 's/#Port 22/Port 2228/g' /etc/ssh/sshd_config
@@ -95,21 +136,97 @@ bastion_update_hosts() {
 }
 
 bastion_install_desktop_packages() {
-  run_apt "apt-get update -eany -q" "system update"
-  run_apt "apt-get install -y -q cinnamon-desktop-environment cinnamon-core xrdp python3-pip" "desktop environment installation"
+  run_apt "apt-get update -eany -q" "apt metadata refresh (desktop stack)"
+  run_apt "apt-get install -y -q --no-install-recommends \
+    xfce4 \
+    dbus-x11 \
+    xrdp xorgxrdp \
+    tigervnc-standalone-server tigervnc-common \
+    firefox-esr \
+    python3 python3-pip python3-venv \
+    firmware-linux" "XFCE, RDP, TigerVNC, Firefox, Python, firmware"
 }
 
-bastion_xrdp_cinnamon() {
-  lab_log INFO "Configuring XRDP"
-  echo "cinnamon-session" > /home/student/.xsession
-  sed -i 's/3389/3390/g' /etc/xrdp/xrdp.ini
-  systemctl restart xrdp.service
+bastion_xfce_performance_defaults() {
+  lab_log INFO "Disabling XFCE compositing for lighter remote sessions"
+  install -d -m 755 -o student -g student /home/student/.config/xfce4/xfconf/xfce-perchannel-xml
+  cat > /home/student/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml <<'XFM'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="use_compositing" type="bool" value="false"/>
+    <property name="show_dock_shadow" type="bool" value="false"/>
+    <property name="show_frame_shadow" type="bool" value="false"/>
+  </property>
+</channel>
+XFM
+  chown -R student:student /home/student/.config
+}
 
-  lab_log INFO "Configuring Cinnamon for RDP"
-  mkdir -p /home/student/.config/gtk-3.0/
-  echo "[Settings]" > /home/student/.config/gtk-3.0/settings.ini
-  echo "gtk-modules=\"appmenu-gtk-module,cinnamon-applet-proxy\"" >> /home/student/.config/gtk-3.0/settings.ini
-  chown -R student:student /home/student
+bastion_xrdp_configure() {
+  lab_log INFO "Configuring XRDP for XFCE (xorgxrdp)"
+  cat > /home/student/.xsession <<'XS'
+#!/bin/sh
+exec startxfce4
+XS
+  chmod 755 /home/student/.xsession
+  chown student:student /home/student/.xsession
+
+  sed -i 's/^port=3389/port=3390/' /etc/xrdp/xrdp.ini
+  sed -i 's/^#*port=3389/port=3390/' /etc/xrdp/xrdp.ini
+
+  if grep -q '^tcp_nodelay=' /etc/xrdp/xrdp.ini; then
+    sed -i 's/^tcp_nodelay=.*/tcp_nodelay=true/' /etc/xrdp/xrdp.ini
+  elif grep -q '^\[Globals\]' /etc/xrdp/xrdp.ini; then
+    sed -i '/^\[Globals\]/a tcp_nodelay=true' /etc/xrdp/xrdp.ini
+  fi
+  if grep -q '^max_bpp=' /etc/xrdp/xrdp.ini; then
+    sed -i 's/^max_bpp=.*/max_bpp=24/' /etc/xrdp/xrdp.ini
+  fi
+
+  systemctl enable xrdp
+  systemctl restart xrdp.service
+}
+
+bastion_tigervnc_setup() {
+  lab_log INFO "Configuring TigerVNC (display :1, TCP 5901) for student"
+  install -d -m 700 -o student -g student /home/student/.vnc
+  cat > /home/student/.vnc/xstartup <<'XVNC'
+#!/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+exec /usr/bin/startxfce4
+XVNC
+  chmod 755 /home/student/.vnc/xstartup
+  chown -R student:student /home/student/.vnc
+
+  printf '%s\n' "${student_password}" | sudo -u student env HOME=/home/student vncpasswd -f >/home/student/.vnc/passwd
+  chmod 600 /home/student/.vnc/passwd
+  chown student:student /home/student/.vnc/passwd
+
+  cat > /etc/systemd/system/tigervnc-student.service <<'UNIT'
+[Unit]
+Description=TigerVNC XFCE session for student (display :1, port 5901)
+After=network.target
+
+[Service]
+Type=simple
+User=student
+Group=student
+Environment=HOME=/home/student
+WorkingDirectory=/home/student
+ExecStart=/usr/bin/tigervncserver :1 -fg -geometry 1920x1080 -depth 24 -localhost no -SecurityTypes VncAuth
+ExecStop=/usr/bin/tigervncserver -kill :1
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+  systemctl daemon-reload
+  systemctl enable tigervnc-student.service
+  systemctl start tigervnc-student.service || lab_log ERROR "TigerVNC service start failed (check /var/log/tigervnc or journalctl)"
 }
 
 bastion_upgrade() {
@@ -137,11 +254,15 @@ bastion_finalize_or_fail() {
 # Main: order of operations — customization steps run top to bottom.
 # -----------------------------------------------------------------------------
 bastion_banner_and_motd
+bastion_apt_enable_firmware_components
+bastion_bootstrap_base_packages
 bastion_student_and_ssh
 bastion_desktop_shortcuts
 track_is_s3 && bastion_s3_extras
 bastion_update_hosts
 bastion_install_desktop_packages
-bastion_xrdp_cinnamon
+bastion_xfce_performance_defaults
+bastion_xrdp_configure
+bastion_tigervnc_setup
 bastion_upgrade
 bastion_finalize_or_fail

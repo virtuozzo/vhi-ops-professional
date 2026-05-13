@@ -13,7 +13,7 @@
 
 variable "lab_track" {
   type        = string
-  default     = "operations"
+  default     = "s3"
   description = "Curriculum profile; selects one block from local.lab_track_profiles."
 
   validation {
@@ -78,8 +78,8 @@ variable "external_network-name" {
 
 variable "bastion-image" {
   type        = string
-  default     = "Ubuntu-20.04"
-  description = "Bastion image name in Glance."
+  default     = "Debian-12"
+  description = "Bastion image name in Glance (Debian 12 cloud image recommended, e.g. genericcloud; name must match your catalog)."
 }
 
 variable "bastion-flavor" {
@@ -98,7 +98,7 @@ variable "bastion-storage_policy" {
 
 variable "ssh_key" {
   type        = string
-  default     = "~/.ssh/id_rsa.pub"
+  default     = "~/.ssh/akochkov.pub"
   description = "Path to your public SSH key for bastion and cluster nodes."
 }
 
