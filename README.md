@@ -380,7 +380,7 @@ If Bastion VM is still being configured, you will see the following prompt:
 
 <img alt="&quot;Customization in progress&quot; Prompt" src="readme/bastion_not_ready.png" title="Bastion VM is not ready" width="500"/>
 
-Once the configuration of Bastion is complete, you should see the graphical login prompt:
+Once the configuration of Bastion is complete, you should see the **LightDM** graphical login prompt on the cloud **VGA / web console** (serial-only consoles do not show the GUI). Log in as **`student`** with the Terraform-generated password.
 
 <img alt="Ready state" src="readme/bastion_ready.png" title="Bastion VM is ready" width="500"/>
 

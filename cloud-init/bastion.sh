@@ -105,20 +105,31 @@ SSHEOF
 }
 
 bastion_desktop_shortcuts() {
-  lab_log INFO "Creating desktop shortcuts"
+  lab_log INFO "Creating desktop shortcuts (Application launchers — avoids untrusted Type=Link prompts)"
   mkdir -p /home/student/Desktop
-  echo "[Desktop Entry]
-Encoding=UTF-8
+  cat >"/home/student/Desktop/VHI Admin Panel.desktop" <<'DESK1'
+[Desktop Entry]
+Version=1.0
+Type=Application
 Name=VHI Admin Panel
-Type=Link
-URL=https://cloud.student.lab:8888
-Icon=text-html" > "/home/student/Desktop/VHI Admin Panel.desktop"
-  echo "[Desktop Entry]
-Encoding=UTF-8
+Comment=Open VHI Admin Panel in Firefox
+Exec=/usr/bin/firefox-esr https://cloud.student.lab:8888
+Icon=firefox-esr
+Terminal=false
+StartupNotify=true
+DESK1
+  cat >"/home/student/Desktop/VHI Self-Service Panel.desktop" <<'DESK2'
+[Desktop Entry]
+Version=1.0
+Type=Application
 Name=VHI Self-Service Panel
-Type=Link
-URL=https://cloud.student.lab:8800
-Icon=text-html" > "/home/student/Desktop/VHI Self-Service Panel.desktop"
+Comment=Open VHI Self-Service in Firefox
+Exec=/usr/bin/firefox-esr https://cloud.student.lab:8800
+Icon=firefox-esr
+Terminal=false
+StartupNotify=true
+DESK2
+  chmod 755 /home/student/Desktop/*.desktop
   chown -R student:student /home/student/Desktop
 }
 
@@ -137,18 +148,23 @@ bastion_update_hosts() {
 
 bastion_install_desktop_packages() {
   run_apt "apt-get update -eany -q" "apt metadata refresh (desktop stack)"
+  lab_log INFO "Selecting lightdm as display manager (local / VGA console graphical login)"
+  echo 'lightdm shared/default-x-display-manager select lightdm' | debconf-set-selections
+
   run_apt "apt-get install -y -q --no-install-recommends \
     xfce4 \
+    xfce4-terminal \
     dbus-x11 \
+    lightdm lightdm-gtk-greeter \
     xrdp xorgxrdp \
     tigervnc-standalone-server tigervnc-common \
     firefox-esr \
     python3 python3-pip python3-venv \
-    firmware-linux" "XFCE, RDP, TigerVNC, Firefox, Python, firmware"
+    firmware-linux" "XFCE, LightDM, RDP, TigerVNC, Firefox, Python, firmware"
 }
 
 bastion_xfce_performance_defaults() {
-  lab_log INFO "Disabling XFCE compositing for lighter remote sessions"
+  lab_log INFO "Disabling XFCE compositing; default terminal = xfce4-terminal"
   install -d -m 755 -o student -g student /home/student/.config/xfce4/xfconf/xfce-perchannel-xml
   cat > /home/student/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml <<'XFM'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -160,7 +176,31 @@ bastion_xfce_performance_defaults() {
   </property>
 </channel>
 XFM
+  cat > /home/student/.config/xfce4/xfconf/xfce-perchannel-xml/helpers.xml <<'HLP'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="helpers" version="1.0">
+  <property name="TerminalEmulator" type="string" value="/usr/bin/xfce4-terminal"/>
+</channel>
+HLP
   chown -R student:student /home/student/.config
+
+  if command -v update-alternatives >/dev/null 2>&1; then
+    update-alternatives --set x-terminal-emulator /usr/bin/xfce4-terminal 2>/dev/null || true
+  fi
+}
+
+bastion_console_graphical_target() {
+  lab_log INFO "Enabling graphical target and LightDM for local console (VGA / web console)"
+  install -d /etc/lightdm/lightdm.conf.d
+  cat >/etc/lightdm/lightdm.conf.d/01-console-vt.conf <<'LDC'
+[LightDM]
+# Prefer the first virtual terminal so typical cloud HTML5 consoles show the greeter.
+minimum-vt=1
+LDC
+  systemctl set-default graphical.target
+  systemctl enable lightdm.service
+  systemctl daemon-reload
+  systemctl start lightdm.service || lab_log ERROR "lightdm failed to start (see journalctl -u lightdm)"
 }
 
 bastion_xrdp_configure() {
@@ -257,11 +297,12 @@ bastion_banner_and_motd
 bastion_apt_enable_firmware_components
 bastion_bootstrap_base_packages
 bastion_student_and_ssh
-bastion_desktop_shortcuts
 track_is_s3 && bastion_s3_extras
 bastion_update_hosts
 bastion_install_desktop_packages
 bastion_xfce_performance_defaults
+bastion_desktop_shortcuts
+bastion_console_graphical_target
 bastion_xrdp_configure
 bastion_tigervnc_setup
 bastion_upgrade
