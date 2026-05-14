@@ -174,8 +174,8 @@ LANG=C.UTF-8
 LOC
   cat >/etc/profile.d/00-fix-ssh-locale.sh <<'FIX'
 # Run before cloud-init locale-check: macOS often forwards LC_CTYPE=UTF-8.
-case ${LC_ALL-} in (UTF-8|utf-8) export LC_ALL=C.UTF-8 ;; esac
-case ${LC_CTYPE-} in (UTF-8|utf-8) export LC_CTYPE=C.UTF-8 ;; esac
+case "$LC_ALL" in (UTF-8|utf-8) export LC_ALL=C.UTF-8 ;; esac
+case "$LC_CTYPE" in (UTF-8|utf-8) export LC_CTYPE=C.UTF-8 ;; esac
 FIX
   chmod 644 /etc/profile.d/00-fix-ssh-locale.sh
 }
