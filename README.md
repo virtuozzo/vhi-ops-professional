@@ -44,7 +44,7 @@ _If the diagram shows more cluster nodes, treat extras as **operations** context
 
 The repository contains:
 - Terraform plan files, ending with `.tf` extension.
-- Cloud-init scripts under [`cloud-init/`](cloud-init/): [`node.sh`](cloud-init/node.sh) (Virtuozzo cluster nodes) and [`bastion.sh`](cloud-init/bastion.sh) (**Debian 12** bastion: XFCE, xrdp, TigerVNC), with bastion behavior gated by **`lab_track`** (Terraform also prepends [`_lab_log.sh`](cloud-init/_lab_log.sh) for shared logging).
+- Cloud-init scripts under [`cloud-init/`](cloud-init/): [`node.sh`](cloud-init/node.sh) (Virtuozzo cluster nodes) and [`bastion.sh`](cloud-init/bastion.sh) (**Debian 12** bastion: XFCE, xrdp), with bastion behavior gated by **`lab_track`** (Terraform also prepends [`_lab_log.sh`](cloud-init/_lab_log.sh) for shared logging).
 - `openstack-creds.sh` for sourcing cloud credentials.
 - Auxiliary files for students, including `WonderSI_Logos.zip`.
 
@@ -343,7 +343,6 @@ bastion_connection_info = {
   "rdp_address"  = "203.0.113.45:3390"
   "ssh_address"  = "203.0.113.45:2228"
   "username"     = "student"
-  "vnc_address"  = "203.0.113.45:5901"
 }
 ```
 
@@ -363,11 +362,10 @@ terraform output -json bastion_connection_info
 ```
 terraform output -json bastion_connection_info | jq -r '.password'
 terraform output -json bastion_connection_info | jq -r '.rdp_address'
-terraform output -json bastion_connection_info | jq -r '.vnc_address'
 terraform output -json bastion_connection_info | jq -r '.ssh_address'
 ```
 
-Ensure your project **Neutron security group** (or equivalent) allows inbound **TCP 3390** (RDP), **TCP 5901** (TigerVNC on display `:1`), and **TCP 2228** (SSH to the `student` user) to the bastion floating IP if students connect from outside a locked-down network.
+Ensure your project **Neutron security group** (or equivalent) allows inbound **TCP 3390** (RDP) and **TCP 2228** (SSH to the `student` user) to the bastion floating IP if students connect from outside a locked-down network.
 
 ## Verifying results
 
@@ -388,11 +386,11 @@ If the console **shows the login screen but keyboard or mouse do not respond**, 
 
 ### Verify that the nested Virtuozzo Infrastructure cluster is fully configured.
 
-Students typically use an **RDP** connection to the Bastion VM (XFCE desktop). **TigerVNC** on port **5901** is also enabled for the same session stack; **SSH** for the `student` user listens on port **2228** (see `ssh_address` in Terraform output). Use a **Python venv** for installing the OpenStack client (`python3 -m venv …`) because Debian enables *externally managed* protection for system-wide `pip`.
+Students typically use an **RDP** connection to the Bastion VM (XFCE desktop). **SSH** for the `student` user listens on port **2228** (see `ssh_address` in Terraform output). Use a **Python venv** for installing the OpenStack client (`python3 -m venv …`) because Debian enables *externally managed* protection for system-wide `pip`.
 
 To verify that the nested Virtuozzo Infrastructure cluster is ready, do the following:
 
-1. Connect to the Bastion VM using an RDP client. Use **`rdp_address`**, **`username`**, and **`password`** from `terraform output bastion_connection_info`. Optionally test **VNC** with **`vnc_address`** and the same password.
+1. Connect to the Bastion VM using an RDP client. Use **`rdp_address`**, **`username`**, and **`password`** from `terraform output bastion_connection_info`.
 2. Access nested Virtuozzo Infrastructure Admin Panel using the desktop shortcut and log in as **`admin`**:
 
 <img alt="Bastion VM desktop shortcut" src="readme/bastion_desktop.png" title="Connecting to Virtuozzo Infrastructure Admin Panel" width="500"/>

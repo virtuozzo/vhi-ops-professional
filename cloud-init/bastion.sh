@@ -1,6 +1,6 @@
 # Unified bastion customization; lab_log from prepended _lab_log.sh.
 # Template vars: student_password, lab_track
-# Target: Debian stable + XFCE + xrdp (xorgxrdp) + optional TigerVNC.
+# Target: Debian stable + XFCE + xrdp (xorgxrdp).
 
 LAB_TRACK="${lab_track}"
 
@@ -160,11 +160,10 @@ bastion_install_desktop_packages() {
     spice-vdagent \
     qemu-guest-agent \
     xrdp xorgxrdp \
-    tigervnc-standalone-server tigervnc-common \
     firefox-esr \
     python3 python3-pip python3-venv pipx \
     locales-all \
-    firmware-linux" "XFCE, LightDM, Xorg input drivers, SPICE/QEMU agents, RDP, TigerVNC, Firefox, Python, locales, firmware"
+    firmware-linux" "XFCE, LightDM, Xorg input drivers, SPICE/QEMU agents, RDP, Firefox, Python, locales, firmware"
 }
 
 bastion_locales_and_ssh_client_quirks() {
@@ -252,47 +251,6 @@ XS
   systemctl restart xrdp.service
 }
 
-bastion_tigervnc_setup() {
-  lab_log INFO "Configuring TigerVNC (display :1, TCP 5901) for student"
-  install -d -m 700 -o student -g student /home/student/.vnc
-  cat > /home/student/.vnc/xstartup <<'XVNC'
-#!/bin/sh
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-exec /usr/bin/startxfce4
-XVNC
-  chmod 755 /home/student/.vnc/xstartup
-  chown -R student:student /home/student/.vnc
-
-  printf '%s\n' "${student_password}" | sudo -u student env HOME=/home/student vncpasswd -f >/home/student/.vnc/passwd
-  chmod 600 /home/student/.vnc/passwd
-  chown student:student /home/student/.vnc/passwd
-
-  cat > /etc/systemd/system/tigervnc-student.service <<'UNIT'
-[Unit]
-Description=TigerVNC XFCE session for student (display :1, port 5901)
-After=network.target
-
-[Service]
-Type=simple
-User=student
-Group=student
-Environment=HOME=/home/student
-WorkingDirectory=/home/student
-ExecStart=/usr/bin/tigervncserver :1 -fg -geometry 1920x1080 -depth 24 -localhost no -SecurityTypes VncAuth
-ExecStop=/usr/bin/tigervncserver -kill :1
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-UNIT
-
-  systemctl daemon-reload
-  systemctl enable tigervnc-student.service
-  systemctl start tigervnc-student.service || lab_log ERROR "TigerVNC service start failed (check /var/log/tigervnc or journalctl)"
-}
-
 bastion_upgrade() {
   run_apt "apt-get upgrade -y -q" "system upgrade"
 }
@@ -329,6 +287,5 @@ bastion_xfce_performance_defaults
 bastion_desktop_shortcuts
 bastion_console_graphical_target
 bastion_xrdp_configure
-bastion_tigervnc_setup
 bastion_upgrade
 bastion_finalize_or_fail
