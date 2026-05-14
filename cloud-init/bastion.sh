@@ -162,8 +162,22 @@ bastion_install_desktop_packages() {
     xrdp xorgxrdp \
     tigervnc-standalone-server tigervnc-common \
     firefox-esr \
-    python3 python3-pip python3-venv \
-    firmware-linux" "XFCE, LightDM, Xorg input drivers, SPICE/QEMU agents, RDP, TigerVNC, Firefox, Python, firmware"
+    python3 python3-pip python3-venv pipx \
+    locales-all \
+    firmware-linux" "XFCE, LightDM, Xorg input drivers, SPICE/QEMU agents, RDP, TigerVNC, Firefox, Python, locales, firmware"
+}
+
+bastion_locales_and_ssh_client_quirks() {
+  lab_log INFO "System default locale (locales-all installed); normalize invalid SSH-forwarded LC_* (e.g. macOS LC_CTYPE=UTF-8)"
+  cat >/etc/default/locale <<'LOC'
+LANG=C.UTF-8
+LOC
+  cat >/etc/profile.d/00-fix-ssh-locale.sh <<'FIX'
+# Run before cloud-init locale-check: macOS often forwards LC_CTYPE=UTF-8.
+case ${LC_ALL-} in (UTF-8|utf-8) export LC_ALL=C.UTF-8 ;; esac
+case ${LC_CTYPE-} in (UTF-8|utf-8) export LC_CTYPE=C.UTF-8 ;; esac
+FIX
+  chmod 644 /etc/profile.d/00-fix-ssh-locale.sh
 }
 
 bastion_xfce_performance_defaults() {
@@ -310,6 +324,7 @@ bastion_student_and_ssh
 track_is_s3 && bastion_s3_extras
 bastion_update_hosts
 bastion_install_desktop_packages
+bastion_locales_and_ssh_client_quirks
 bastion_xfce_performance_defaults
 bastion_desktop_shortcuts
 bastion_console_graphical_target
