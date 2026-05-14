@@ -78,8 +78,8 @@ variable "external_network-name" {
 
 variable "bastion-image" {
   type        = string
-  default     = "Ubuntu-20.04"
-  description = "Bastion image name in Glance."
+  default     = "Debian-13"
+  description = "Bastion image name in Glance (Debian 13 / trixie generic cloud image required; name must match your catalog)."
 }
 
 variable "bastion-flavor" {

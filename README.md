@@ -44,7 +44,7 @@ _If the diagram shows more cluster nodes, treat extras as **operations** context
 
 The repository contains:
 - Terraform plan files, ending with `.tf` extension.
-- Cloud-init scripts under [`cloud-init/`](cloud-init/): [`node.sh`](cloud-init/node.sh) and [`bastion.sh`](cloud-init/bastion.sh), with behavior gated by **`lab_track`** (Terraform also prepends [`_lab_log.sh`](cloud-init/_lab_log.sh) for shared logging).
+- Cloud-init scripts under [`cloud-init/`](cloud-init/): [`node.sh`](cloud-init/node.sh) (Virtuozzo cluster nodes) and [`bastion.sh`](cloud-init/bastion.sh) (**Debian 13** bastion: XFCE, xrdp), with bastion behavior gated by **`lab_track`** (Terraform also prepends [`_lab_log.sh`](cloud-init/_lab_log.sh) for shared logging).
 - `openstack-creds.sh` for sourcing cloud credentials.
 - Auxiliary files for students, including `WonderSI_Logos.zip`.
 
@@ -102,10 +102,10 @@ The project you are working with must have the following images:
   - https://repo.virtuozzo.com/vz-platform/releases/7.0/x86_64/iso/vz-platform-7.0.iso
 - Virtuozzo Infrastructure QCOW2 image
   - https://downloads.virtuozzo.com/vzlinux-iso-hci-7.0.0-251.qcow2
-- Ubuntu 20.04 QCOW2 image (for the **bastion** VM)
-  - https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.img
+- Debian 13 **generic cloud** image for the **bastion** VM (Glance name must match **`bastion-image`**, default `Debian-13`)
+  - Official builds: [Debian cloud images — trixie](https://cloud.debian.org/images/cloud/trixie/) (e.g. `debian-13-generic-amd64`). Enable **`contrib`**, **`non-free`**, and **`non-free-firmware`** in apt if your NIC needs non-free firmware; [`cloud-init/bastion.sh`](cloud-init/bastion.sh) attempts to extend `debian.sources` / `sources.list` when `non-free-firmware` is missing.
 
-Please do not use other versions of Virtuozzo Infrastructure or Ubuntu images, as the deployment script will likely fail to configure them.
+Please do not use other versions of Virtuozzo Infrastructure images than those intended for this lab, as the deployment script will likely fail to configure them. The **bastion** image must be **Debian 13**-based (cloud-init assumes `apt` and package names from **trixie**); adjust **`bastion-image`** to the exact name in your Glance catalog.
 
 ## Sandbox provisioning
 
@@ -240,13 +240,13 @@ Adjust bastion variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
 ##### Bastion image name
 
 You need to set the `bastion-image` variable to the name of the Bastion image in your project.
-For example, if in your cloud Bastion image is named `Ubuntu-20.04`, the variable should look like this:
+For example, if in your cloud the image is named `Debian-13`, the variable should look like this:
 
 ```
 ## Bastion image
 variable "bastion-image" {
   type = string
-  default = "Ubuntu-20.04" # If required, replace the image name with the one you have in the cloud
+  default = "Debian-13" # If required, replace the image name with the one you have in the cloud
 }
 ```
 
@@ -339,9 +339,10 @@ After `terraform apply` completes, the connection details are displayed in the o
 
 ```
 bastion_connection_info = {
-  "password"    = "xK#9mPq!2wLnR$vT"
-  "rdp_address" = "203.0.113.45:3390"
-  "username"    = "student"
+  "password"     = "xK#9mPq!2wLnR$vT"
+  "rdp_address"  = "203.0.113.45:3390"
+  "ssh_address"  = "203.0.113.45:2228"
+  "username"     = "student"
 }
 ```
 
@@ -361,7 +362,10 @@ terraform output -json bastion_connection_info
 ```
 terraform output -json bastion_connection_info | jq -r '.password'
 terraform output -json bastion_connection_info | jq -r '.rdp_address'
+terraform output -json bastion_connection_info | jq -r '.ssh_address'
 ```
+
+Ensure your project **Neutron security group** (or equivalent) allows inbound **TCP 3390** (RDP) and **TCP 2228** (SSH to the `student` user) to the bastion floating IP if students connect from outside a locked-down network.
 
 ## Verifying results
 
@@ -374,17 +378,19 @@ If Bastion VM is still being configured, you will see the following prompt:
 
 <img alt="&quot;Customization in progress&quot; Prompt" src="readme/bastion_not_ready.png" title="Bastion VM is not ready" width="500"/>
 
-Once the configuration of Bastion is complete, you should see the graphical login prompt:
+Once the configuration of Bastion is complete, you should see the **LightDM** graphical login prompt on the cloud **VGA / web console** (serial-only consoles do not show the GUI). Log in as **`student`** with the Terraform-generated password.
+
+If the console **shows the login screen but keyboard or mouse do not respond**, the usual causes are missing **Xorg input drivers** (addressed by installing **`xserver-xorg-input-all`**) or a **SPICE** web console without **`spice-vdagent`** / **`qemu-guest-agent`** running in the guest. This stack installs and enables those; after redeploy, if it still fails, check **`/var/log/Xorg.0.log`**, **`journalctl -u lightdm`**, and **`systemctl status spice-vdagentd qemu-guest-agent`**.
 
 <img alt="Ready state" src="readme/bastion_ready.png" title="Bastion VM is ready" width="500"/>
 
 ### Verify that the nested Virtuozzo Infrastructure cluster is fully configured.
 
-Students typically use an **RDP** connection to the Bastion VM.
+Students typically use an **RDP** connection to the Bastion VM (XFCE desktop). **SSH** for the `student` user listens on port **2228** (see `ssh_address` in Terraform output). Use a **Python venv** for installing the OpenStack client (`python3 -m venv …`) because Debian enables *externally managed* protection for system-wide `pip`.
 
 To verify that the nested Virtuozzo Infrastructure cluster is ready, do the following:
 
-1. Connect to the Bastion VM using the RDP client. Use the address and credentials from `terraform output bastion_connection_info`.
+1. Connect to the Bastion VM using an RDP client. Use **`rdp_address`**, **`username`**, and **`password`** from `terraform output bastion_connection_info`.
 2. Access nested Virtuozzo Infrastructure Admin Panel using the desktop shortcut and log in as **`admin`**:
 
 <img alt="Bastion VM desktop shortcut" src="readme/bastion_desktop.png" title="Connecting to Virtuozzo Infrastructure Admin Panel" width="500"/>
