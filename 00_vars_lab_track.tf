@@ -79,7 +79,7 @@ variable "external_network-name" {
 variable "bastion-image" {
   type        = string
   default     = "Debian-13"
-  description = "Bastion image name in Glance (Debian 13 / trixie generic cloud image recommended; name must match your catalog)."
+  description = "Bastion image name in Glance (Debian 13 / trixie generic cloud image required; name must match your catalog)."
 }
 
 variable "bastion-flavor" {
@@ -98,7 +98,7 @@ variable "bastion-storage_policy" {
 
 variable "ssh_key" {
   type        = string
-  default     = "~/.ssh/akochkov.pub"
+  default     = "~/.ssh/id_rsa.pub"
   description = "Path to your public SSH key for bastion and cluster nodes."
 }
 
