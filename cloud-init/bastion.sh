@@ -82,16 +82,13 @@ bastion_student_and_ssh() {
   useradd -m -s /bin/bash -G sudo student
   echo "student:${student_password}" | chpasswd
 
-  for u in debian ubuntu; do
-    if [ -f "/home/$u/.ssh/authorized_keys" ]; then
-      lab_log INFO "Copying SSH authorized_keys from $u to student"
-      install -d -m 700 -o student -g student /home/student/.ssh
-      cp "/home/$u/.ssh/authorized_keys" /home/student/.ssh/authorized_keys
-      chmod 600 /home/student/.ssh/authorized_keys
-      chown -R student:student /home/student/.ssh
-      break
-    fi
-  done
+  if [ -f /home/debian/.ssh/authorized_keys ]; then
+    lab_log INFO "Copying SSH authorized_keys from debian (cloud default user) to student"
+    install -d -m 700 -o student -g student /home/student/.ssh
+    cp /home/debian/.ssh/authorized_keys /home/student/.ssh/authorized_keys
+    chmod 600 /home/student/.ssh/authorized_keys
+    chown -R student:student /home/student/.ssh
+  fi
 
   lab_log INFO "Allowing password authentication for user student (OpenStack client over SSH)"
   cat >/etc/ssh/sshd_config.d/90-student-auth.conf <<'SSHEOF'
