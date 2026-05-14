@@ -44,7 +44,7 @@ _If the diagram shows more cluster nodes, treat extras as **operations** context
 
 The repository contains:
 - Terraform plan files, ending with `.tf` extension.
-- Cloud-init scripts under [`cloud-init/`](cloud-init/): [`node.sh`](cloud-init/node.sh) (Virtuozzo cluster nodes) and [`bastion.sh`](cloud-init/bastion.sh) (**Debian 12** bastion: XFCE, xrdp), with bastion behavior gated by **`lab_track`** (Terraform also prepends [`_lab_log.sh`](cloud-init/_lab_log.sh) for shared logging).
+- Cloud-init scripts under [`cloud-init/`](cloud-init/): [`node.sh`](cloud-init/node.sh) (Virtuozzo cluster nodes) and [`bastion.sh`](cloud-init/bastion.sh) (**Debian 13** bastion: XFCE, xrdp), with bastion behavior gated by **`lab_track`** (Terraform also prepends [`_lab_log.sh`](cloud-init/_lab_log.sh) for shared logging).
 - `openstack-creds.sh` for sourcing cloud credentials.
 - Auxiliary files for students, including `WonderSI_Logos.zip`.
 
@@ -102,10 +102,10 @@ The project you are working with must have the following images:
   - https://repo.virtuozzo.com/vz-platform/releases/7.0/x86_64/iso/vz-platform-7.0.iso
 - Virtuozzo Infrastructure QCOW2 image
   - https://downloads.virtuozzo.com/vzlinux-iso-hci-7.0.0-251.qcow2
-- Debian 12 **generic cloud** image for the **bastion** VM (Glance name must match **`bastion-image`**, default `Debian-12`)
-  - Official builds: [Debian cloud images — bookworm](https://cloud.debian.org/images/cloud/bookworm/) (e.g. `debian-12-generic-amd64`). Enable **`contrib`**, **`non-free`**, and **`non-free-firmware`** in apt if your NIC needs non-free firmware; [`cloud-init/bastion.sh`](cloud-init/bastion.sh) attempts to extend `debian.sources` / `sources.list` when `non-free-firmware` is missing.
+- Debian 13 **generic cloud** image for the **bastion** VM (Glance name must match **`bastion-image`**, default `Debian-13`)
+  - Official builds: [Debian cloud images — trixie](https://cloud.debian.org/images/cloud/trixie/) (e.g. `debian-13-generic-amd64`). Enable **`contrib`**, **`non-free`**, and **`non-free-firmware`** in apt if your NIC needs non-free firmware; [`cloud-init/bastion.sh`](cloud-init/bastion.sh) attempts to extend `debian.sources` / `sources.list` when `non-free-firmware` is missing.
 
-Please do not use other versions of Virtuozzo Infrastructure images than those intended for this lab, as the deployment script will likely fail to configure them. The **bastion** image must be **Debian 12**-based (cloud-init assumes `apt` and package names from Bookworm); adjust **`bastion-image`** to the exact name in your Glance catalog.
+Please do not use other versions of Virtuozzo Infrastructure images than those intended for this lab, as the deployment script will likely fail to configure them. The **bastion** image must be **Debian 13**-based (cloud-init assumes `apt` and package names from **trixie**); adjust **`bastion-image`** to the exact name in your Glance catalog.
 
 ## Sandbox provisioning
 
@@ -240,13 +240,13 @@ Adjust bastion variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
 ##### Bastion image name
 
 You need to set the `bastion-image` variable to the name of the Bastion image in your project.
-For example, if in your cloud the image is named `Debian-12`, the variable should look like this:
+For example, if in your cloud the image is named `Debian-13`, the variable should look like this:
 
 ```
 ## Bastion image
 variable "bastion-image" {
   type = string
-  default = "Debian-12" # If required, replace the image name with the one you have in the cloud
+  default = "Debian-13" # If required, replace the image name with the one you have in the cloud
 }
 ```
 

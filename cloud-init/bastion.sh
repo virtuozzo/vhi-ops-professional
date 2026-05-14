@@ -1,6 +1,6 @@
 # Unified bastion customization; lab_log from prepended _lab_log.sh.
 # Template vars: student_password, lab_track
-# Target: Debian stable + XFCE + xrdp (xorgxrdp).
+# Target: Debian 13 (trixie) + XFCE + xrdp (xorgxrdp).
 
 LAB_TRACK="${lab_track}"
 

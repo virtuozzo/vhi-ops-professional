@@ -13,7 +13,7 @@
 
 variable "lab_track" {
   type        = string
-  default     = "s3"
+  default     = "operations"
   description = "Curriculum profile; selects one block from local.lab_track_profiles."
 
   validation {
@@ -78,8 +78,8 @@ variable "external_network-name" {
 
 variable "bastion-image" {
   type        = string
-  default     = "Debian-12"
-  description = "Bastion image name in Glance (Debian 12 cloud image recommended, e.g. genericcloud; name must match your catalog)."
+  default     = "Debian-13"
+  description = "Bastion image name in Glance (Debian 13 / trixie generic cloud image recommended; name must match your catalog)."
 }
 
 variable "bastion-flavor" {
