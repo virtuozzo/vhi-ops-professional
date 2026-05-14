@@ -203,7 +203,7 @@ HLP
 }
 
 bastion_console_graphical_target() {
-  lab_log INFO "Enabling graphical target and LightDM for local console (VGA / web console)"
+  lab_log INFO "Enabling local console GUI (LightDM) after successful customization"
   install -d /etc/lightdm/lightdm.conf.d
   cat >/etc/lightdm/lightdm.conf.d/01-console-vt.conf <<'LDC'
 [LightDM]
@@ -264,6 +264,7 @@ bastion_finalize_or_fail() {
     lab_log INFO "Customization finished successfully"
     rm /etc/motd
     mv /etc/issue{.bak,}
+    bastion_console_graphical_target
     reboot
   fi
 }
@@ -282,7 +283,6 @@ bastion_install_desktop_packages
 bastion_locales_and_ssh_client_quirks
 bastion_xfce_performance_defaults
 bastion_desktop_shortcuts
-bastion_console_graphical_target
 bastion_xrdp_configure
 bastion_upgrade
 bastion_finalize_or_fail
