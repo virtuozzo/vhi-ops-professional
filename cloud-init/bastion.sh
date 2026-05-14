@@ -156,11 +156,14 @@ bastion_install_desktop_packages() {
     xfce4-terminal \
     dbus-x11 \
     lightdm lightdm-gtk-greeter \
+    xserver-xorg-core xserver-xorg-input-all \
+    spice-vdagent \
+    qemu-guest-agent \
     xrdp xorgxrdp \
     tigervnc-standalone-server tigervnc-common \
     firefox-esr \
     python3 python3-pip python3-venv \
-    firmware-linux" "XFCE, LightDM, RDP, TigerVNC, Firefox, Python, firmware"
+    firmware-linux" "XFCE, LightDM, Xorg input drivers, SPICE/QEMU agents, RDP, TigerVNC, Firefox, Python, firmware"
 }
 
 bastion_xfce_performance_defaults() {
@@ -197,9 +200,16 @@ bastion_console_graphical_target() {
 # Prefer the first virtual terminal so typical cloud HTML5 consoles show the greeter.
 minimum-vt=1
 LDC
+  systemctl daemon-reload
+
+  lab_log INFO "Guest agents for cloud web console keyboard/mouse (SPICE / QEMU)"
+  systemctl enable qemu-guest-agent.service 2>/dev/null || true
+  systemctl start qemu-guest-agent.service 2>/dev/null || true
+  systemctl enable spice-vdagentd.service 2>/dev/null || true
+  systemctl start spice-vdagentd.service 2>/dev/null || true
+
   systemctl set-default graphical.target
   systemctl enable lightdm.service
-  systemctl daemon-reload
   systemctl start lightdm.service || lab_log ERROR "lightdm failed to start (see journalctl -u lightdm)"
 }
 

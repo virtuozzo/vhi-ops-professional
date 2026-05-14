@@ -382,6 +382,8 @@ If Bastion VM is still being configured, you will see the following prompt:
 
 Once the configuration of Bastion is complete, you should see the **LightDM** graphical login prompt on the cloud **VGA / web console** (serial-only consoles do not show the GUI). Log in as **`student`** with the Terraform-generated password.
 
+If the console **shows the login screen but keyboard or mouse do not respond**, the usual causes are missing **Xorg input drivers** (addressed by installing **`xserver-xorg-input-all`**) or a **SPICE** web console without **`spice-vdagent`** / **`qemu-guest-agent`** running in the guest. This stack installs and enables those; after redeploy, if it still fails, check **`/var/log/Xorg.0.log`**, **`journalctl -u lightdm`**, and **`systemctl status spice-vdagentd qemu-guest-agent`**.
+
 <img alt="Ready state" src="readme/bastion_ready.png" title="Bastion VM is ready" width="500"/>
 
 ### Verify that the nested Virtuozzo Infrastructure cluster is fully configured.
