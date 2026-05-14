@@ -386,7 +386,7 @@ If the console **shows the login screen but keyboard or mouse do not respond**, 
 
 ### Verify that the nested Virtuozzo Infrastructure cluster is fully configured.
 
-Students typically use an **RDP** connection to the Bastion VM (XFCE desktop). **SSH** for the `student` user listens on port **2228** (see `ssh_address` in Terraform output). Use a **Python venv** for installing the OpenStack client (`python3 -m venv …`) because Debian enables *externally managed* protection for system-wide `pip`.
+Students typically use an **RDP** connection to the Bastion VM (XFCE desktop). **SSH** for the `student` user listens on port **2228** (see `ssh_address` in Terraform output).
 
 To verify that the nested Virtuozzo Infrastructure cluster is ready, do the following:
 
