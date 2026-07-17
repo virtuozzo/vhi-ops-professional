@@ -26,7 +26,7 @@ variable "lab_track" {
 
 variable "vhi-image" {
   type        = string
-  default     = "VHI-7.0.0-251.qcow2"
+  default     = "vzlinux-iso-hci-7.3.0-185.qcow2"
   description = "Virtuozzo Infrastructure QCOW2 image name or UUID (see vhi-image_isUUID)."
 }
 
@@ -114,21 +114,21 @@ locals {
   lab_track_profiles = {
     operations = {
       enable_cluster_compute = true
-      default_cluster_name   = "vhi-ops-pro-lab"
+      default_cluster_name   = "vis-pro-lab"
       mn_count               = 3
       worker_node_count      = 1
       deploy_bastion         = true
     }
     s3 = {
       enable_cluster_compute = false
-      default_cluster_name   = "vhi-s3-ops-lab"
+      default_cluster_name   = "vis-s3-lab"
       mn_count               = 3
       worker_node_count      = 0
       deploy_bastion         = true
     }
     vzsup = {
       enable_cluster_compute = true
-      default_cluster_name   = "vhi-vzsup-lab"
+      default_cluster_name   = "vis-vzsup-lab"
       mn_count               = 3
       worker_node_count      = 0
       deploy_bastion         = false
