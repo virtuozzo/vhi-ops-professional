@@ -104,23 +104,23 @@ SSHEOF
 bastion_desktop_shortcuts() {
   lab_log INFO "Creating desktop shortcuts (Application launchers — avoids untrusted Type=Link prompts)"
   mkdir -p /home/student/Desktop
-  cat >"/home/student/Desktop/VHI Admin Panel.desktop" <<'DESK1'
+  cat >"/home/student/Desktop/VIS Admin Panel.desktop" <<'DESK1'
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=VHI Admin Panel
-Comment=Open VHI Admin Panel in Firefox
+Name=VIS Admin Panel
+Comment=Open VIS Admin Panel in Firefox
 Exec=/usr/bin/firefox-esr https://cloud.student.lab:8888
 Icon=firefox-esr
 Terminal=false
 StartupNotify=true
 DESK1
-  cat >"/home/student/Desktop/VHI Self-Service Panel.desktop" <<'DESK2'
+  cat >"/home/student/Desktop/VIS Self-Service Panel.desktop" <<'DESK2'
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=VHI Self-Service Panel
-Comment=Open VHI Self-Service in Firefox
+Name=VIS Self-Service Panel
+Comment=Open VIS Self-Service in Firefox
 Exec=/usr/bin/firefox-esr https://cloud.student.lab:8800
 Icon=firefox-esr
 Terminal=false

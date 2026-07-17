@@ -1,5 +1,5 @@
-export OS_PROJECT_DOMAIN_NAME=vhi-ops           # replace "vhi-ops" with your domain name
-export OS_USER_DOMAIN_NAME=vhi-ops              # replace "vhi-ops" with your domain name
+export OS_PROJECT_DOMAIN_NAME=vis-ops           # replace "vis-ops" with your domain name
+export OS_USER_DOMAIN_NAME=vis-ops              # replace "vis-ops" with your domain name
 export OS_PROJECT_NAME=student1                 # replace "student1" with your project name
 export OS_USERNAME=user.name                    # replace "user.name" with your user name
 export OS_PASSWORD=**********                   # replace "**********" with password of your user

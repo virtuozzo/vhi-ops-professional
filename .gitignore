@@ -34,8 +34,11 @@ override.tf.json
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
 # example: *tfplan*
 **/.terraform.lock.hcl
-**/.vhi-ops-professional.code-workspace
+**/.vis-ops-professional.code-workspace
 **/.DS_Store
 **/.vscode
 .DS_Store
-vhi-ops-professional.code-workspace
+vis-ops-professional.code-workspace
+
+# Local OpenStack credentials (copied from openstack-creds.sh.example); never commit real credentials
+openstack-creds.sh

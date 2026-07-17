@@ -5,21 +5,21 @@ locals {
     mn_ip                  = "10.0.101.11"
     ha_ip_public           = "10.0.102.10"
     ha_ip_private          = "10.0.101.10"
-    password_root          = var.vhi-password_root
-    password_admin         = var.vhi-password_admin
+    password_root          = var.vis-password_root
+    password_admin         = var.vis-password_admin
     cluster_name           = local.cluster_name
   }
 }
 
-## VHI MN node instances
-resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
+## VIS MN node instances
+resource "openstack_compute_instance_v2" "vis-mn_nodes" {
   count     = local.mn_count
   name      = "node${count.index + 1}.lab"
-  flavor_id = data.openstack_compute_flavor_v2.vhi-flavor_main.id
+  flavor_id = data.openstack_compute_flavor_v2.vis-flavor_main.id
   key_pair  = openstack_compute_keypair_v2.ssh_key.name
   block_device {
-    uuid                  = local.vhi-image_id
-    volume_type           = var.vhi-storage_policy
+    uuid                  = local.vis-image_id
+    volume_type           = var.vis-storage_policy
     source_type           = "image"
     volume_size           = 150
     boot_index            = 0
@@ -28,7 +28,7 @@ resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
   }
 
   block_device {
-    volume_type           = var.vhi-storage_policy
+    volume_type           = var.vis-storage_policy
     source_type           = "blank"
     destination_type      = "volume"
     volume_size           = 100
@@ -37,7 +37,7 @@ resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
   }
 
   block_device {
-    volume_type           = var.vhi-storage_policy
+    volume_type           = var.vis-storage_policy
     source_type           = "blank"
     destination_type      = "volume"
     volume_size           = 100
@@ -82,15 +82,15 @@ resource "openstack_compute_instance_v2" "vhi-mn_nodes" {
   ])
 }
 
-## VHI worker node instances (not created when lab_track = s3; see local.worker_node_count for operations/vzsup)
-resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
+## VIS worker node instances (not created when lab_track = s3; see local.worker_node_count for operations/vzsup)
+resource "openstack_compute_instance_v2" "vis-worker_nodes" {
   count     = local.worker_node_count
   name      = "node${count.index + 4}.lab"
-  flavor_id = data.openstack_compute_flavor_v2.vhi-flavor_worker.id
+  flavor_id = data.openstack_compute_flavor_v2.vis-flavor_worker.id
   key_pair  = openstack_compute_keypair_v2.ssh_key.name
   block_device {
-    uuid                  = local.vhi-image_id
-    volume_type           = var.vhi-storage_policy
+    uuid                  = local.vis-image_id
+    volume_type           = var.vis-storage_policy
     source_type           = "image"
     volume_size           = 150
     boot_index            = 0
@@ -99,7 +99,7 @@ resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
   }
 
   block_device {
-    volume_type           = var.vhi-storage_policy
+    volume_type           = var.vis-storage_policy
     source_type           = "blank"
     destination_type      = "volume"
     volume_size           = 100
@@ -108,7 +108,7 @@ resource "openstack_compute_instance_v2" "vhi-worker_nodes" {
   }
 
   block_device {
-    volume_type           = var.vhi-storage_policy
+    volume_type           = var.vis-storage_policy
     source_type           = "blank"
     destination_type      = "volume"
     volume_size           = 100

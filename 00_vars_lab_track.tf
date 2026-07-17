@@ -22,45 +22,45 @@ variable "lab_track" {
   }
 }
 
-# --- VHI cluster (general; applies to all tracks) ---
+# --- VIS cluster (general; applies to all tracks) ---
 
-variable "vhi-image" {
+variable "vis-image" {
   type        = string
   default     = "vzlinux-iso-hci-7.3.0-185.qcow2"
-  description = "Virtuozzo Infrastructure QCOW2 image name or UUID (see vhi-image_isUUID)."
+  description = "Virtuozzo Infrastructure QCOW2 image name or UUID (see vis-image_isUUID)."
 }
 
-variable "vhi-image_isUUID" {
+variable "vis-image_isUUID" {
   type        = bool
   default     = false
-  description = "If true, vhi-image is a Glance UUID; if false, lookup by image name."
+  description = "If true, vis-image is a Glance UUID; if false, lookup by image name."
 }
 
-variable "vhi-flavor_main" {
+variable "vis-flavor_main" {
   type        = string
   default     = "va-16-32"
   description = "Flavor for main (MN) cluster nodes."
 }
 
-variable "vhi-flavor_worker" {
+variable "vis-flavor_worker" {
   type        = string
   default     = "va-8-16"
   description = "Flavor for worker nodes (unused when the selected track has worker_node_count = 0)."
 }
 
-variable "vhi-storage_policy" {
+variable "vis-storage_policy" {
   type        = string
   default     = "default"
-  description = "Cinder volume type for VHI node volumes."
+  description = "Cinder volume type for VIS node volumes."
 }
 
-variable "vhi-password_root" {
+variable "vis-password_root" {
   type        = string
   default     = "Lab_r00t"
-  description = "Root password on VHI nodes (cloud-init)."
+  description = "Root password on VIS nodes (cloud-init)."
 }
 
-variable "vhi-password_admin" {
+variable "vis-password_admin" {
   type        = string
   default     = "Lab_admin"
   description = "Admin panel password (cloud-init / vinfra)."

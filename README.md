@@ -30,7 +30,7 @@
 
 ## Description
 
-This repository provisions a nested Virtuozzo Infrastructure (VHI) sandbox for the **Virtuozzo Infrastructure Operations Professional** courses. **One codebase** supports multiple curricula via Terraform variable **`lab_track`** in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
+This repository provisions a nested Virtuozzo Infrastructure (VIS) sandbox for the **Virtuozzo Infrastructure Operations Professional** courses. **One codebase** supports multiple curricula via Terraform variable **`lab_track`** in [`00_vars_lab_track.tf`](00_vars_lab_track.tf):
 
 **Do not change `lab_track` on an existing workspace** without destroying and recreating the environment: network layout and instance `user_data` differ by track.
 
@@ -45,11 +45,11 @@ _If the diagram shows more cluster nodes, treat extras as **operations** context
 The repository contains:
 - Terraform plan files, ending with `.tf` extension.
 - Cloud-init scripts under [`cloud-init/`](cloud-init/): [`node.sh`](cloud-init/node.sh) (Virtuozzo cluster nodes) and [`bastion.sh`](cloud-init/bastion.sh) (**Debian 13** bastion: XFCE, xrdp), with bastion behavior gated by **`lab_track`** (Terraform also prepends [`_lab_log.sh`](cloud-init/_lab_log.sh) for shared logging).
-- `openstack-creds.sh` for sourcing cloud credentials.
+- `openstack-creds.sh.example` — template for the cloud credentials file (copy to `openstack-creds.sh`, then source).
 - Auxiliary files for students, including `WonderSI_Logos.zip`.
 
 Terraform plan files follow this naming scheme:
-- [`00_vars_lab_track.tf`](00_vars_lab_track.tf) — student/operator variables in file order: **`lab_track`**; VHI image, flavors, storage; **`external_network-name`**; bastion image, flavor, storage; **`ssh_key`**; then **`locals.lab_track_profiles`** at the bottom of the file.
+- [`00_vars_lab_track.tf`](00_vars_lab_track.tf) — student/operator variables in file order: **`lab_track`**; VIS image, flavors, storage; **`external_network-name`**; bastion image, flavor, storage; **`ssh_key`**; then **`locals.lab_track_profiles`** at the bottom of the file.
 - `10_data_*.tf` files contain runtime data collection modules.
 - `20_res_*.tf` files contain resource definitions.
 
@@ -136,42 +136,42 @@ Use **Terraform 0.14.0 or newer** (see `required_version` in the root module). T
 You will need to review and usually adjust variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf). They appear **in this order** in that file:
 
 1. **`lab_track`** — **`operations`** or **`s3`**, depending on the course you are completing.
-2. **Virtuozzo Infrastructure nodes:** **`vhi-image`**, **`vhi-image_isUUID`**, **`vhi-flavor_main`**, **`vhi-flavor_worker`**, **`vhi-storage_policy`**.
+2. **Virtuozzo Infrastructure nodes:** **`vis-image`**, **`vis-image_isUUID`**, **`vis-flavor_main`**, **`vis-flavor_worker`**, **`vis-storage_policy`**.
 3. **Networking:** **`external_network-name`** (Neutron external network for the lab router SNAT and bastion floating IP when a bastion is deployed). Internal lab network names and CIDRs are fixed in [`20_res_network.tf`](20_res_network.tf).
 4. **Bastion:** **`bastion-image`**, **`bastion-flavor`**, **`bastion-storage_policy`** (ignored when the selected profile sets **`deploy_bastion = false`**).
 5. **`ssh_key`** — path to your public SSH key for the bastion and cluster nodes.
 6. **`lab_track_profiles`** — at the **bottom** of the file, inside the `locals` block: per-track **`mn_count`**, **`worker_node_count`**, **`deploy_bastion`**, **`enable_cluster_compute`**, **`default_cluster_name`**. Normally you only set **`lab_track`**; change the profile map only if you know what you are doing.
 
-The subsections below follow the same order (VHI → networking → bastion → SSH). **`lab_track`** and **`lab_track_profiles`** are summarized in the numbered list above.
+The subsections below follow the same order (VIS → networking → bastion → SSH). **`lab_track`** and **`lab_track_profiles`** are summarized in the numbered list above.
 
 #### Adjust Virtuozzo Infrastructure node variables
 
-Adjust VHI node variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf), in file order:
+Adjust VIS node variables in [`00_vars_lab_track.tf`](00_vars_lab_track.tf), in file order:
 
-1. Virtuozzo Infrastructure image name (`vhi-image`, `vhi-image_isUUID`).
+1. Virtuozzo Infrastructure image name (`vis-image`, `vis-image_isUUID`).
 2. Main node flavor.
 3. Worker node flavor.
 4. Virtuozzo Infrastructure node storage policy.
 
 ##### Virtuozzo Infrastructure Image name
 
-You need to set the `vhi-image` variable to the name (or UUID—see below) of the Virtuozzo Infrastructure image in your project.
-For example, if in your cloud, the Virtuozzo Infrastructure image is named `VHI-latest.qcow2`, the variable should look like this:
+You need to set the `vis-image` variable to the name (or UUID—see below) of the Virtuozzo Infrastructure image in your project.
+For example, if in your cloud, the Virtuozzo Infrastructure image is named `VIS-latest.qcow2`, the variable should look like this:
 
 ```
-## VHI image name
-variable "vhi-image" {
+## VIS image name
+variable "vis-image" {
   type = string
-  default = "VHI-latest.qcow2" # If required, replace the image name with the one you have in the cloud
+  default = "VIS-latest.qcow2" # If required, replace the image name with the one you have in the cloud
 }
 
 ```
 
-**Name vs UUID:** Variable `vhi-image_isUUID` defaults to `false`. In that mode, Terraform looks up `vhi-image` by **image name** in Glance. If your cloud has images of different versions with the same name (e.g. `VHI-latest.qcow2`) set `vhi-image_isUUID` to `true` and set `vhi-image` to the UUID string (the name lookup is skipped).
+**Name vs UUID:** Variable `vis-image_isUUID` defaults to `false`. In that mode, Terraform looks up `vis-image` by **image name** in Glance. If your cloud has images of different versions with the same name (e.g. `VIS-latest.qcow2`) set `vis-image_isUUID` to `true` and set `vis-image` to the UUID string (the name lookup is skipped).
 
 ```
-## Set to true when vhi-image is a Glance image UUID, not a name
-variable "vhi-image_isUUID" {
+## Set to true when vis-image is a Glance image UUID, not a name
+variable "vis-image_isUUID" {
   type    = bool
   default = false
 }
@@ -179,12 +179,12 @@ variable "vhi-image_isUUID" {
 
 ##### Main node flavor
 
-You need to set the `vhi-flavor_main` variable to the flavor name that provides at least 16 CPU cores and 32 GiB RAM.
+You need to set the `vis-flavor_main` variable to the flavor name that provides at least 16 CPU cores and 32 GiB RAM.
 For example, if in your cloud such flavor is named `va-16-32`, the variable should look like this:
 
 ```
 ## Main node flavor name
-variable "vhi-flavor_main" {
+variable "vis-flavor_main" {
   type    = string
   default = "va-16-32"  # If required, replace the flavor name with the one you have in the cloud
 }
@@ -192,12 +192,12 @@ variable "vhi-flavor_main" {
 
 ##### Worker node flavor
 
-For **`lab_track = "operations"`**, set the `vhi-flavor_worker` variable to the flavor name that provides at least 8 CPU cores and 16 GiB RAM. **S3 track** does not deploy workers; this variable is unused there.
+For **`lab_track = "operations"`**, set the `vis-flavor_worker` variable to the flavor name that provides at least 8 CPU cores and 16 GiB RAM. **S3 track** does not deploy workers; this variable is unused there.
 For example, if in your cloud such flavor is named `va-8-16`, the variable should look like this:
 
 ```
 ## Worker node flavor name
-variable "vhi-flavor_worker" {
+variable "vis-flavor_worker" {
   type    = string
   default = "va-8-16"   # If required, replace the flavor name with the one you have in the cloud
 }
@@ -205,12 +205,12 @@ variable "vhi-flavor_worker" {
 
 ##### Virtuozzo Infrastructure node storage policy
 
-You need to set the `vhi-storage_policy` variable to the storage policy with at least 1750GB of storage in the project's quota.
+You need to set the `vis-storage_policy` variable to the storage policy with at least 1750GB of storage in the project's quota.
 For example, if in your cloud such policy is named `default`, the variable should look like this:
 
 ```
-## VHI node storage policy
-variable "vhi-storage_policy" {
+## VIS node storage policy
+variable "vis-storage_policy" {
   type    = string
   default = "default"   # If required, replace the storage policy with the one you have in the cloud
 }
@@ -279,25 +279,28 @@ variable "bastion-storage_policy" {
 #### Adjust SSH key path
 
 Set the `ssh_key` variable in [`00_vars_lab_track.tf`](00_vars_lab_track.tf) to point to your public SSH key.
-For example, if your SSH key is located in `~/.ssh/student.pub`, the variable should look like this:
+For example, if your SSH key is located in `~/.ssh/id_rsa.pub`, the variable should look like this:
 
 ```
 ## Bastion/Node access SSH key
 variable "ssh_key" {
   type    = string
-  default = "~/.ssh/student.pub" # Replace with the path to your public SSH key
+  default = "~/.ssh/id_rsa.pub" # Replace with the path to your public SSH key
 }
 ```
 
 ### Step 4: Adjust and source the OpenStack credentials file
 
-This repository contains an `openstack-creds.sh` file you can adjust to get a usable OpenStack credentials file.
-In it, you will need to change some environmental variables related to your OpenStack credentials.
+This repository contains an `openstack-creds.sh.example` template. Copy it to `openstack-creds.sh`, then edit that copy with your OpenStack credentials:
 
-Follow the instructions in the file to get a usable OpenStack credentials file:
 ```
-export OS_PROJECT_DOMAIN_NAME=vhi-ops           # replace "vhi-ops" with your domain name
-export OS_USER_DOMAIN_NAME=vhi-ops              # replace "vhi-ops" with your domain name
+cp openstack-creds.sh.example openstack-creds.sh
+```
+
+Then open `openstack-creds.sh` and change the environmental variables related to your OpenStack credentials, following the inline instructions:
+```
+export OS_PROJECT_DOMAIN_NAME=vis-ops           # replace "vis-ops" with your domain name
+export OS_USER_DOMAIN_NAME=vis-ops              # replace "vis-ops" with your domain name
 export OS_PROJECT_NAME=student1                 # replace "student1" with your project name
 export OS_USERNAME=user.name                    # replace "user.name" with your user name
 export OS_PASSWORD=**********                   # replace "**********" with password of your user
