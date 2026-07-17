@@ -138,7 +138,7 @@ locals {
   lab = local.lab_track_profiles[var.lab_track]
 
   enable_cluster_compute = local.lab.enable_cluster_compute
-  cluster_name           = "${trimsuffix(local.lab.default_cluster_name, "lab")}${random_id.cluster_suffix.hex}"
+  cluster_name           = "${local.lab.default_cluster_name}-${random_id.cluster_suffix.hex}"
   mn_count               = local.lab.mn_count
   worker_node_count      = local.lab.worker_node_count
   deploy_bastion         = local.lab.deploy_bastion
