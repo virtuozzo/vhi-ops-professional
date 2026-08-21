@@ -101,7 +101,7 @@ The project you are working with must have the following images:
 - Virtuozzo Infrastructure ISO image
   - https://repo.virtuozzo.com/vz-platform/releases/hci-7.3.0-185/x86_64/iso/vz-platform-7.3.0-185.iso
 - Virtuozzo Infrastructure QCOW2 image
-  - http://downloads.virtuozzo.com/vzlinux-iso-hci-7.3.0-185.qcow2
+  - https://downloads.virtuozzo.com/vzlinux-iso-hci-7.3.0-185.qcow2
 - Debian 13 **generic cloud** image for the **bastion** VM (Glance name must match **`bastion-image`**, default `Debian-13`)
   - Official builds: [Debian cloud images — trixie](https://cloud.debian.org/images/cloud/trixie/) (e.g. `debian-13-generic-amd64`). Enable **`contrib`**, **`non-free`**, and **`non-free-firmware`** in apt if your NIC needs non-free firmware; [`cloud-init/bastion.sh`](cloud-init/bastion.sh) attempts to extend `debian.sources` / `sources.list` when `non-free-firmware` is missing.
 
